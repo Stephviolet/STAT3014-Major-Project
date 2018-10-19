@@ -1,0 +1,292 @@
+Part 3 - Model Selection using AIC
+Stepwise forward regression was used to select the most informative variables, which were included in a generalised linear model (GLM). GLMs were used because they are able to handle different types of data including binary, categorical, and numerical. Logistic regression was used for binary data and classical regression was used for continuous data. A 5% significance level was chosen as a threshold for the inclusion of the model variables.
+In this section the aim was to determine the effectiveness of the three macro- nutrients for predicting gender, socio-economic status, Basal Betabolic Rate (BRM), BMI, age, and mintues spent sedentary for subjects in this study. These variables were chosen because they were found to be significant predictors of BMI. Can we determine the type of diet someone may have according to their SES, age, gender, waist measurement, bmr, time spent sedentary, energy intake, and time spend doing exercise.  
+
+BMI - BMISC
+```{r}
+bmi = dat1.var$bmi
+aovadd.bmi = lm(bmi~protein+fat+carb)
+bestmod.bmi = stepAIC(aovadd.bmi , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.bmi)
+```
+Best model with significance of 0.05 is given as
+$Y_{ijk} = 27.05+ 0.51*MedProtein+ 1.58HighProtein$
+
+Wasit measurement
+```{r}
+waist = dat1.var$waist.cm
+aovwaist = lm(waist~protein+fat+carb)
+bestmod.waist = stepAIC(aovwaist , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.waist)
+```
+
+BMR
+```{r}
+bmr = dat1.var$bmr
+aovbmr = lm(bmr~protein+fat+carb)
+bestmod.bmr = stepAIC(aovbmr , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.bmr)
+```
+
+Sedentary
+```{r}
+sed = dat1.var$mins.sed
+aovsed = lm(sed~protein+fat+carb)
+bestmod.sed = stepAIC(aovsed , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.sed)
+```
+
+Sex
+```{R}
+sex = ifelse(dat1.var$sex==1,1,0) #1 = male
+glm.sex = glm(sex~protein+fat+carb, family= binomial)
+bestmod.sex = stepAIC(glm.sex, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.sex)
+
+logistic = function(x){1/(1+exp(-x))}
+p.add = logistic(0.46 - 0.48- 0.31 - 0.68- 0.27 - 0.72 + 0.54) #probabiliy of being male and being on this diet is 19%
+p.add
+```
+The suboptimal model is : sex~protein+fat+carb+protein:fat when using a significanc level of 0.05. This has the lowest AIC out of all one step models beginning with the full additive model. Our model becomes:
+$log(p/(1-p)) = 0.46 - 0.48*HighProtein - 0.31*MedFat - 0.68*HighFat- 0.27*MedCarb - 0.72*HighCarb + 0.54*HighProtein:HighFat$
+This tells us that:
+- Less high protein diets 
+
+SES
+```{r}
+dataSteph$SF2SA1QN = as.numeric(as.factor(dataSteph$SF2SA1QN))
+ses = ifelse(dataSteph$SF2SA1QN>4,1,0) #decile [1:4] = 0
+glmadd.ses = glm(ses~protein+fat+carb, family= binomial)
+bestmod.ses = stepAIC(glmadd.ses, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.ses)
+```
+Beginning with the full additive model out best model according to one step AIC with a significance level of 0.05 is ses ~ protein + fat + carb + protein:fat. Summary statistics give the model as:
+$Y_{ijk} =  -1.19 - 0.21*MedCarb - 0.54*HighCarb$
+This indicates that if you are in a lo
+
+ENERGY (BMR) - EIBMR1
+```{r}
+bmr = dataSteph$EIBMR1
+aovadd.bmr = lm(bmr~protein+fat+carb)
+bestmod.bmr = stepAIC(aovadd.bmr , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.bmr)
+```
+Best model is given by 
+$Y_{ijk} = 1.37-0.20*MedProtein -0.47*HighProtein+ 0.16*MedFat+ 0.21HighFat -0.15*MedCarb -0.26*HighCarb+ 0.07MedProtein:MedCarb+ 0.12*HighProtein:MedCarb$
+
+
+
+Exercise - ADTOTSE
+```{r}
+sedent = dataSteph$ADTOTSE
+aovadd.sed = lm(sedent~protein+fat+carb)
+bestmod.sed = stepAIC(aovadd.sed, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.sed)
+```
+Best model is the full additive model with significance of 0.05. We get the model
+$Y_{ijk} = 2362.68 -91.42*MedProtein -200.97*HighProtein+ 100.89MedFat +  123.35HighFat -75.94*MedCarb$
+
+Age - using ANOVA since age is not a factor but a numercial variable. 
+```{r}
+#anova - check if model good or not
+#lm - estimate coefficients use summary(lm()) for model
+age = dataSteph$AGEC
+aovadd.age = lm(age~protein+fat+carb)
+bestmod.age = stepAIC(aovadd.age, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.age)
+```
+Best model with a significance of 0.05 is the full additive model. The model is 
+$Y_{ijk} = 51.25 -3.16*HighFat-3.22*MedCarb -6.25*HighCarb$
+
+
+
+Code
+```{r}
+logistic = function(x){1/(1+exp(-x))}
+p1 = logistic(0.4242 - 0.592-0.6896-0.7555+0.852) #probabiliy of being males and high fat is 45%
+p1
+#Interpret: when level of significance is 0.05 on the three way interacton model, we see that the model is $Y_{ijk} = 0.4242 - 0.592*HighCarb-0.6896*HighFat-0.7555*HighProtien+0.852*HighFatHighProtein$. Males are less likely to be high carb, high fat, and high protien. Probability of being males with high fat, high carb, high protein is $31.8%$. Therefore there ae more females on a high fat, high protein, and high carb diet than a male.
+```
+
+
+
+```{R}
+#model selection
+null = glm(high.protein~1,data=dat1,family=binomial) 
+full = glm(high.protein~.,data=dat1,family=binomial) 
+n = length(high.protein) 
+# stepwise from full model using BIC 
+res.step.bic.full <- step(full,k=log(n)) 
+# stepwise from full model using AIC 
+res.step.aic.full <- step(full,k=2) 
+# stepwise from null model using BIC 
+res.step.bic.null <- step(null,scope=list(lower=null,upper=full), k=log(n)) 
+# stepwise from null model using AIC 
+res.step.aic.null <- step(null,scope=list(lower=null,upper=full), k=2)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{R}
+library(ggplot2)
+# Scatterplot BMI v BMR
+sex<-factor(ifelse(dataSteph$SEX==1,'male','female'))
+diet = factor(ifelse(dataSteph$BDYMSQ04 == 5, 'no diet', 'diet')) #changed Ton's if diet code - was only giving not on diet
+BMIvBMR<-na.omit(data.frame(BMI=dataSteph$BMISC,BMR=dataSteph$BMR,Sex=sex,Diet=diet))
+ggplot(BMIvBMR,aes(x=BMI,y=BMR))+geom_point(aes(colour=Sex))+geom_smooth(aes(group=Sex),method = "lm") #group by gender
+```
+Comment: Higher BMI is positively correlated with high BMR. Females show a lower BMR to males but BMIs across both genders are in roughly the same range. 
+
+```{R}
+# BMI v Diet
+BMIvDiet<-na.omit(data.frame(BMI=dataSteph$BMISC,Sex=sex,Diet=diet)) 
+
+ggplot(BMIvDiet,aes(x=BMI,group=factor(Diet),fill=factor(Diet)))+geom_histogram(aes(y=..density..),position='dodge',bins=10)+labs(title = "BMI density across diet status")
+ggplot(BMIvBMR,aes(x=BMR,group=factor(Diet),fill=factor(Diet)))+geom_histogram(aes(y=..density..),position='dodge',bins=10)+labs(title = "BMR density across diet status")
+```
+Comment BMI density across diet status: there are more people not on diets with BMIs under 30 and slightly more people who are on diets with BMIs greater than 30 (may not be unexpected: people who are on diets may be trying to lose weight hence the higher BMI). 
+Comment BMR density across diet status: there are more people who are on diets with BMR under 6000 and more peolpe who are not on diets with BMR above 6000 (not too sure why this could be). 
+
+```{R}
+t.test(BMI~Diet,data=BMIvBMR)
+t.test(BMR~Diet,data=BMIvBMR)
+av1 = anova(lm(BMR~BMI+Diet,data=BMIvBMR))
+av2 = anova(lm(BMR~Diet+BMI,data=BMIvBMR))
+var.test(BMI~Diet,data=BMIvBMR)
+var(BMIvBMR$BMI[BMIvBMR$Diet=='diet'])
+var(BMIvBMR$BMI[BMIvBMR$Diet=='no diet'])
+var.test(BMR~Diet,data=BMIvBMR)
+
+
+no_av1 = lm(BMR~BMI+Diet,data=BMIvBMR)
+par(mfrow=c(2,2)) 
+boxplot(no_av1$residuals) 
+plot(no_av1, which=1:3, add.smooth=FALSE) 
+
+no_av2 = lm(BMR~Diet+BMI,data=BMIvBMR)
+par(mfrow=c(2,2)) 
+boxplot(no_av2$residuals) 
+plot(no_av2, which=1:3, add.smooth=FALSE)
+```
+Comment t test BMI~diet : null hypothesis is that there is no difference in mean BMI of people dieting and not dieting. p < 0.05 so we reject the null hypithesis and say that there is evidence of a significant difference between the mean BMIs of the two groups. 
+
+Comment t test BMR~diet : p > 0.05. accept H0 that there is no differnce in BMR of the two diet groups. 
+
+Comment ANOVA1: have the model $Y_{ij} = mu + \alpha_i + \beta_j + \epsilon_{ij}$ and testing the hypothesis that $H_0: BMI Effect = 0$. Since  both diet and BMI are significant when accounting for BMI across diet we cant drop diet.
+Comment ANOVA2: have the model $Y_{ij} = mu + \alpha_i + \beta_j + \epsilon_{ij}$ and testing the hypothesis that $H_0: Diet Effect = 0$. Since both diet is not significant when accounting for diet and then BMI but BMI is significant, we cant drop diet. Note that these designs are not orthognoal. 
+
+Assumptions: 
+- Common variance for BMI~Diet: met
+- Common var for BMR~Diet: not met
+
+```{r}
+anova(lm(BMR~BMI*Diet,data=BMIvBMR)) #2 factor ANOVA -BMI IS NOT A FACTOR
+anova(lm(BMR~Diet*BMI,data=BMIvBMR))
+```
+ANOVA explained: A*B produces the B main e???ect SS adjusted for A, i.e. SSB|A and the A main e???ects SS ignoring B, i.e. SSA as in a 1-way ANOVA on A treatments alone. The sum of squares due to A but ignoring B, SSA, should not be used to test if the A main e???ects can be dropped from the model. 
+
+Comment on ANOVA1: have tested SSBMI|diet. SSBMI in 2 factor = SSBMI in 1 way ANOVA and then has produced SSB|A. Thus, since p = 0.01415 < 0.05 we cant drop any variables from this model since the interaction term (ab)_ij != 0. 
+
+Comment on ANOVA2:cant drop any vairables from this model either. 
+
+```{R}
+# Energy Intake
+EIBMR.Data<-na.omit(data.frame(EIBMR=dataSteph$EIBMR1,BMI=dataSteph$BMISC,BMR=dataSteph$BMR,Sex=sex, Diet=diet))
+                         
+ggplot(EIBMR.Data,aes(x=EIBMR,y=BMR))+geom_point(aes(colour=Sex))+geom_smooth(aes(group=Sex),method = "lm")
+ggplot(EIBMR.Data,aes(x=EIBMR,group=factor(Diet),fill=factor(Diet)))+geom_histogram(aes(y=..density..),position='dodge',bins=10)
+
+summary(lm(EIBMR~BMR,data=EIBMR.Data))
+summary(lm(EIBMR~Diet,data=EIBMR.Data))
+t.test(EIBMR~Diet,data=EIBMR.Data)
+var.test(EIBMR~Diet,data=EIBMR.Data)
+bartlett.test(EIBMR~Diet,data=EIBMR.Data) 
+var(EIBMR.Data$EIBMR[EIBMR.Data$Diet=='diet'])
+var(EIBMR.Data$EIBMR[EIBMR.Data$Diet=='no diet'])
+
+t.test(EIBMR~Sex,data=EIBMR.Data)
+var.test(EIBMR~Sex,data=EIBMR.Data)
+bartlett.test(EIBMR~Sex,data=EIBMR.Data) 
+```
+Comment energy by BMR : negative relationship between BMR and BMR energy. Lower BMR energy has higher BMR. Females appears to have a lower BMR than males (consistent with prvious graphs) and have a smaller BMR energy range than males. 
+Comment BMR energy density : more people who are on diets have EIBMR less than 1 compared to people not on diets. There are more people who are not on diets with EIBMR higher than 1 compared to people who are on diets (not sure what this means). 
+
+Comment ANOVA1:
+Comment ANOVA2:
+
+Comment t test : $H_0: \mu_{diet} = \mu_{no diet}$. Since p < 0.05, reject null hyothesis and say that there is a difference across diet and no diet EIBMR means. 
+Variance test: p<0.05, reject then null hypothesis that variances are the same across two groups - assumption of common variance not met here. 
+Bartletts test: same finding. 
+
+Comment t test: $H_0: \mu_{males} = \mu_{females}$. Since p > 0.05, accept null hyothesis and say that there is no difference across male and female EIBMR means. 
+Variance test: variances are different. 
+Bartletts test: same finding. 
+
+```{R}
+# Stepwise Seleciton
+library(leaps)
+library(bestglm)
+Data.candidate<-na.omit(data.frame(BMR=dataSteph$BMR,EIBMR=dataSteph$EIBMR1,BMI=dataSteph$BMISC,Sex=sex,Diet=diet, Hypterintensive = dataSteph$HYPBC,ADTOTSE=dataSteph$ADTOTSE,Age=dataSteph$AGEC))
+                           
+model.full<-regsubsets(BMI ~ . , data=Data.candidate, method="exhaustive")
+        
+X<-Data.candidate[,names(Data.candidate)!='BMI']
+y<-Data.candidate$BMI
+Xy<-cbind(X,y)
+model.bestglm<-bestglm(Xy,IC='BIC')#exhaustive search, use method=forward for forward selection
+models.table<-model.bestglm$Subsets
+summary(lm(y~.,data=X[as.logical(models.table[2,2:(ncol(models.table)-2)])]))
+```
+Finding the best model using forward selection. Best model with lowest BMI includes all variables except for ADTOTSE. 
+
+```{R}
+# k-fold cross-validation
+K<-10
+n<-nrow(Xy)
+m<-nrow(models.table)-1 #number of models comparing
+g<-20 #run CV multiple times and average the result since the CV error depend on the split of dataset
+err.out<-matrix(0,K*g,m) #miss-classification rate
+
+##
+set.seed(0)
+fold<-sample(rep(1:K, each=n/K))
+
+##
+for(ginger in 1:g){fold<-sample(rep(1:K, each=n/K))
+for(i in 1:m){
+  for(k in 1:K){
+    data.train<-Xy[fold!=k,]
+    data.test<-Xy[fold==k,]
+    mod.train<-lm(y~.,data=X[as.logical(models.table[i+1,2:(ncol(models.table)-2)])])
+    pred.test<-predict(mod.train, newdata=data.test)
+    # err.out[k,i]<-sum(abs(data.test$Survived-pred.test))/length(pred.test)
+    err.out[(ginger-1)*K+k,i]<-mean((data.test$y-pred.test)^2)
+  }
+}
+}
+cv<-apply(err.out,2,mean)
+cv.sd<-apply(err.out,2,sd)
+cv.estimation<-cbind(cv,cv-cv.sd,cv+cv.sd)
+colnames(cv.estimation)<-c('CV','cv-SE(CV)','CV+SE(CV)')
+cv.estimation
+plot(cv.estimation[,1],type='b',ylim=c(8,28))
+lines(cv.estimation[,2],lty=2,col='blue')
+lines(cv.estimation[,3],lty=2,col='blue')
+
+```
