@@ -1,5 +1,5 @@
 ```{R} 
-proj_dat = read.csv("C:/Users/JPRS1/Desktop/Datasets/proj_dat.csv")
+proj_dat = read.csv("C:/Users/JPRS1/Desktop/Datasets/cleanedData.csv")
 dataSteph = proj_dat[which(proj_dat$AGEC >= 18), ]
 ```
 
