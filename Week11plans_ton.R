@@ -40,9 +40,10 @@ loglin.dat<-data.frame(y=table.y,
                           carb=table.carb,
                           protein=table.protein)
 loglin.dat
-d.additive<-glm(y~carb+fat+protein,
-                family='poisson',data=loglin.dat)$dev
-d.additive
+glm.additive<-glm(y~carb+fat+protein,
+                family='poisson',data=loglin.dat)
+d.additive$dev
+# additive model is for complete independence
 glm.cf<-glm(y~carb+fat+protein+carb:fat,
                 family='poisson',data=loglin.dat)
 glm.cp<-glm(y~carb+fat+protein+carb:protein,
@@ -50,5 +51,61 @@ glm.cp<-glm(y~carb+fat+protein+carb:protein,
 glm.fp<-glm(y~carb+fat+protein+fat:protein,
           family='poisson',data=loglin.dat)
 c(glm.cf$dev,glm.cp$dev,glm.fp$dev)
-anova(glm.fp,test='Chisq')
-glm(y~fat+carb+protein,family='poisson',data=loglin.dat)
+c(glm.cf$df.residual,glm.cp$df.residual,glm.fp$df.residual)
+# glm.cf has least deviance
+anova(glm.cf,test='Chisq')
+1-pchisq(glm.additive$dev-glm.cf$dev,
+glm.additive$df.residual-glm.cf$df.residual)
+1-pchisq(glm.additive$dev-glm.cp$dev,
+glm.additive$df.residual-glm.cp$df.residual)
+1-pchisq(glm.additive$dev-glm.fp$dev,
+glm.additive$df.residual-glm.fp$df.residual)
+
+# reject the additive model(complete independence)
+glm.cf.cp<-glm(y~carb+fat+protein+carb:fat+carb:protein,
+                family='poisson',data=loglin.dat)
+glm.cf.fp<-glm(y~carb+fat+protein+carb:fat+fat:protein,
+                family='poisson',data=loglin.dat)
+c(glm.cf.cp$dev,glm.cf.fp$dev)
+c(glm.cf.cp$df.residual,glm.cf.fp$df.residual)
+#
+1-pchisq(glm.cf$dev-glm.cf.cp$dev,
+glm.cf$df.residual-glm.cf.cp$df.residual)
+anova(glm.cf.cp,test="Chisq")
+# reject null and prefer glm.cf.cp
+
+# test the uniform association case
+glm.u.a<-glm(y~carb+fat+protein+carb:fat+carb:protein+fat:protein,
+                family='poisson',data=loglin.dat)
+glm.u.a$dev
+1-pchisq(glm.cf.cp$dev-glm.u.a$dev,
+glm.cf.cp$df.residual-glm.u.a$df.residual)
+
+# test the saturated model
+glm.sat<-glm(y~carb*fat*protein,
+                family='poisson',data=loglin.dat)
+1-pchisq(glm.u.a$dev-glm.sat$dev,
+glm.u.a$df.residual-glm.sat$df.residual)
+anova(glm.sat,test="Chisq")
+
+# accept saturated
+# mu_ijk hat = y_ijk
+diet.prop<-cbind(loglin.dat[,1]/nrow(adultData),
+  loglin.dat[,2:4])
+colnames(diet.prop)[1]<-'proportion'
+
+# sort the df by proportion
+diet.prop<-diet.prop[order(
+  diet.prop$proportion,decreasing=TRUE),]
+
+# see most common diet types
+head(diet.prop)
+
+# 70% of the people are in 5 most popular diet types
+sum(diet.prop$proportion[1:5])
+
+# compare with the marginal proportion
+summary(carb.cat)
+summary(protein.cat)
+summary(fat.cat)
+pie(summary(fat.cat)) # pie chart
