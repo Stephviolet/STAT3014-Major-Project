@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1540015090809.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1647968378",
+    "id" : "F160EBB8",
+    "lastKnownWriteTime" : 1540015114,
+    "last_content_update" : 1540015114208,
+    "path" : "~/GitHub/STAT3014-Major-Project/sample.Rmd",
+    "project_path" : "sample.Rmd",
+    "properties" : {
+        "cursorPosition" : "7,3",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
