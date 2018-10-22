@@ -1,12 +1,17 @@
 ---
 title: "Clara"
 author: "Anqi Chi SID:460204008"
+<<<<<<< HEAD
+date: "22/10/2018"
+output: pdf_document
+=======
 date: "2018 October"
 output:
   pdf_document: default
   word_document: default
   html_document:
     df_print: paged
+>>>>>>> 780a6b9a975525f57598113d0798946254bf476c
 ---
 
 ```{r setup, include=FALSE}
@@ -47,7 +52,44 @@ summary(X)
 # LDA
 
 ```{r,echo=FALSE}
+# Load the functions from cvTools into memory.
+# First we are going to load the cross-validation function
+cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interleaved")) 
+{
+  n <- round(rep(n, length.out = 1))
+  if (!isTRUE(n > 0)) 
+    stop("'n' must be positive")
+
+  K <- round(rep(K, length.out = 1))
+  if (!isTRUE((K > 1) && K <= n)) 
+    stop("'K' outside allowable range")
+
+  type <- if (K == n) 
+    "leave-one-out"
+  else match.arg(type)
+  if (type == "random") {
+    R <- round(rep(R, length.out = 1))
+    if (!isTRUE(R > 0)) 
+      R <- 1
+    subsets <- replicate(R, sample(n))
+  }
+  else {
+    R <- 1
+    subsets <- as.matrix(seq_len(n))
+  }
+  which <- rep(seq_len(K), length.out = n)
+  if (type == "consecutive") 
+    which <- rep.int(seq_len(K), tabulate(which))
+  folds <- list(n = n, K = K, R = R, subsets = subsets, which = which)
+  class(folds) <- "cvFolds"
+  folds
+}
+```
+
+```{r,echo=FALSE}
 library(MASS)
+<<<<<<< HEAD
+=======
 cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interleaved")) 
 {
   n <- round(rep(n, length.out = 1))
@@ -79,6 +121,7 @@ cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interlea
   folds
 }
 # k - value of k in KNN
+>>>>>>> 780a6b9a975525f57598113d0798946254bf476c
 V =10 #number of CV folds
 # seed - (optional) internally sets the seed.
 cv.da = function(X,y,method=c("lda","qda"),V,seed=NA)
@@ -133,7 +176,7 @@ Fit the LDA method
 ```{r,echo=TRUE}
 n = length(y)
 dat = data.frame(y,X)
-X1 = model.matrix(~-1+BMR+SEX+EIBMR1+ADTOTSE+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
+X1 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
 X1 = data.frame(X1)
 summary(X1)
 res <- lda(y~., data=X1,subset=1:n)
@@ -143,14 +186,18 @@ res
 ##Comment:
 The above output suggests the following interpretations for each of the variables.
 * People who have higher BMR are more likely to obese
+* Lower EIBMR1(Energy intake) increases obese probability (since the coefficient -0.434 is negative).
+* Lower ADTOTSE(Total mins spent sitting or lying down) increases obese probability (since the coefficient -4.590553e-05 is negative).
+
 * Sex = 1 for males. So females are more likely to obese
-* Lower EIBMR1(Energy intake) increases obese probability (since the coefficent -0.377 is negative).
-* Lower ADTOTSE(Total mins spent sitting or lying down) increases obese probability (since the coefficent -3.533708e-05 is negative).
-* People who have high fat and high carbon diet type are less likely to obese
-* People who have high protein diet type increase the probability of obesity
+* People on a diet are more likely to obese compared with people not on a diet
+
+* People who have high fat and high protein diet type are more likely to obese
+* People who have high carbon diet type decrease the probability of obesity
 
 
 ##CV error
+
 ```{r,echo=TRUE}
 #cross validation error for LDA.
 res.lda = cv.da(X1,y,method="lda",V,seed=1)
@@ -163,7 +210,7 @@ The CV error for LDA is 18.232 percent
 
 ```{r,echo=TRUE}
 library(rpart)
-X2 = model.matrix(~-1+BMR+SEX+EIBMR1+ADTOTSE+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
+X2 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
 # Be careful as coding y as a factor here, Otherwise R will do a regression tree rather than a classification tree
 res.rpart <- rpart(as.factor(y) ~ X2, data=dat)
 
@@ -171,7 +218,27 @@ library(rpart.plot)
 rpart.plot(res.rpart,type=0,extra=1,main="CART fit",cex.main=2,cex=1)
 ```
 ##Comment:
+<<<<<<< HEAD
+* 91.4 percent of people whose BMR are less than 6103 are normal (not obese).
+* 83.3 percent of male whose BMR are between 6103 and 8297 are normal.
+* 68.5 percent of male whose BMR are greater than 8297 are obese
+* 54.2 percent of female whose BMR are between 6103 and 6390 are normal
+* 80.1 percent of female whose BMR are greater than 6390 are obese
+
+
+| Obesity | BMR < 6103 | 6103 < BMR < 8297 | BMR > 8297 |
+|---------|----------|---------------|----------|
+| male    | 8.6%     | 6.7%          | 68.5%    |
+
+
+
+| Obesity | BMR < 6103 | 6103 < BMR < 6390 | BMR > 6390 |
+|---------|----------|---------------|----------|
+| female  | 8.6%     | 45.8%         | 80.1%    |
+
+=======
 Interpret
+>>>>>>> 780a6b9a975525f57598113d0798946254bf476c
 
 cross-validation for rpart.
 ```{r,echo=FALSE}
@@ -236,8 +303,8 @@ res.glm = glm(y~.,family=binomial,data=X1)
 summary(res.glm)
 ```
 ##Comment:
-The full model has the coefficeints for BMR, SEX, EIBMR1, ADTOTSE, BDYMSQ04, CHOPER1 as statisticlly
-signifficantly different from zero at the 0.05 level. Te fitted model is
+The full model has the coefficeints for BMR, EIBMR1, ADTOTSE, SEX, BDYMSQ04, CHOPER1 as statisticlly
+signifficantly different from zero at the 0.05 level. The fitted model is
 $$
 \mbox{logit}(p) = -0.1093 + 0.001879 \cdot\mbox{BMR} - 3.423 \cdot \mbox{SEX} - 0.7113 \cdot\mbox{EIBMR1} -0.00005952 \cdot \mbox{ADTOTSE} + 0.3802 \cdot \mbox{BDYMSQ04} - 0.01014 \cdot \mbox{CHOPER1} 
 $$
@@ -304,9 +371,14 @@ Comment:
 The CV error for glm is 17.78 percent
 
 #summary
+We now display the results nicely using the package huxtable.
+
 ```{r,echo=FALSE}
 library(huxtable)
+<<<<<<< HEAD
+=======
 library(kableExtra)
+>>>>>>> 780a6b9a975525f57598113d0798946254bf476c
 ht <- hux(
         Methods = c( 'LDA', 'rpart', 'glm'),
         Errors = 100*c(res.lda, res.rpart, res.glm.cv), 
