@@ -130,7 +130,10 @@ f
 #mean waist size 
 most.ext = 93.3089
 mn.high.pro = 93.3089 +1.8730
-mn.med.carb = 93.3089 +1.8730 - 0.8955
+mn.med.carb = 93.3089 +1.8730 - 0.895
+
+#using predict()
+
 ```
 AIC: waist ~ protein + carb
 Deviance: waist~protein+carb
@@ -157,7 +160,9 @@ c
 
 
 ```
-In this case we accept the null model. 
+AIC: bmr ~ protein + fat + carb + protein:fat + protein:carb + fat:carb
+Deviance
+Choose AIC since the AIC has a lower F statistic than the Devicance test. 
 
 Sedentary
 ```{r}
