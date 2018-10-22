@@ -76,8 +76,8 @@ a #protein is significant. So now look for protein and fat and protein and carb.
 b
 c
 
-mod15 = glm(bmi.num~protein+fat, family = binomial)
-mod16 = glm(bmi.num~protein+carb, family = binomial)
+mod15 = glm(bmi.num~protein+fat, family = binomial) #not signif
+mod16 = glm(bmi.num~protein+carb, family = binomial) #not signif
 d = anova(mod15, test = "Chisq")
 e = anova(mod16, test = "Chisq")
 d
@@ -89,13 +89,13 @@ prop.low = logistic(pars[1])
 prop.med = logistic(pars[1]+pars[2])
 prop.high = logistic(pars[1]+pars[2]+pars[3])
 ```
-For BMI as a binary varible we have the best model using stepAIC as:
-$log(p/1-p) =  -1.12 + 0.18*MedProtein + 0.53*HighProtein$
+AIC: bmi.num ~ protein
+Deviance:  bmi.num ~ protein
 The estimated proprotion of obese people within the low protein group is 24.6% (since only working with intercept). 
 The estimated proprotion of obese people within the medium protein group is 28.2%. 
 The estimated proprotion of obese people within the high protein group is 40.1%.
 
-Wasit measurement
+Waist measurement
 ```{r}
 #AIC model selection
 waist = dat1.var$waist.cm
@@ -127,17 +127,13 @@ mod21 = lm(waist~protein+carb+fat) #not signif
 f = anova(mod21)
 f
 
-mod21 = lm(waist~protein*carb) #not signif
-f = anova(mod21)
-f
-
-#mean waist size - still zero?
-mn.fat = 93.3089
+#mean waist size 
+most.ext = 93.3089
 mn.high.pro = 93.3089 +1.8730
 mn.med.carb = 93.3089 +1.8730 - 0.8955
 ```
-In both cases stepAIC and deviance test find that the best model for waist measurements relies on protein and carbs. The best model is:
-$Y_{ijk} = 93.3089 + 1.87*HighProtein - 0.90*MedCarb$. 
+AIC: waist ~ protein + carb
+Deviance: waist~protein+carb
 Because were are now doing normal regression we are looking at the mean within each group, not the proportion. The largest mean waist size in this model was found to be 95.12cm for people with a high protein diet. 
 
 
