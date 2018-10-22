@@ -10,378 +10,36 @@ knitr::opts_chunk$set(echo = TRUE)
 #library(tidyverse)
 ```
 
-
-```{r echo=FALSE}
-#Read data
-dat_orig <- read.csv("nutmstatData2018.csv",header=TRUE)
-dat <-  dat_orig
-colNames <- colnames(dat_orig)
-
-#Recode variables
-# for (i in 1:length(colNames)) { cat("categoricalList[",i,"] <- FALSE # ",colNames[i],"\n"); }
-
-categoricalList <- c()
-categoricalList[ 1 ] <- FALSE #  BMISC 
-categoricalList[ 2 ] <- FALSE #  AGEC 
-categoricalList[ 3 ] <- TRUE #  SMSBC 
-categoricalList[ 4 ] <- TRUE #  COBBC 
-categoricalList[ 5 ] <- TRUE #  FEMLSBC 
-categoricalList[ 6 ] <- FALSE #  PHDKGWBC 
-categoricalList[ 7 ] <- FALSE #  PHDCMHBC 
-categoricalList[ 8 ] <- FALSE #  EXLWTBC 
-categoricalList[ 9 ] <- FALSE #  EXLWMBC 
-categoricalList[ 10 ] <- FALSE #  EXLWVBC 
-categoricalList[ 11 ] <- FALSE #  PHDCMWBC 
-categoricalList[ 12 ] <- FALSE #  BMR 
-categoricalList[ 13 ] <- FALSE #  EIBMR1 
-categoricalList[ 14 ] <- TRUE #  SF2SA1QN 
-categoricalList[ 15 ] <- TRUE #  INCDEC 
-categoricalList[ 16 ] <- TRUE #  DIABBC 
-categoricalList[ 17 ] <- TRUE #  HCHOLBC 
-categoricalList[ 18 ] <- TRUE #  HSUGBC 
-categoricalList[ 19 ] <- TRUE #  HYPBC 
-categoricalList[ 20 ] <- FALSE #  ENERGYT1 
-categoricalList[ 21 ] <- FALSE #  ENRGYT1 
-categoricalList[ 22 ] <- FALSE #  MOISTT1 
-categoricalList[ 23 ] <- FALSE #  PROTT1 
-categoricalList[ 24 ] <- FALSE #  FATT1 
-categoricalList[ 25 ] <- FALSE #  CHOWSAT1 
-categoricalList[ 26 ] <- FALSE #  CHOWOAT1 
-categoricalList[ 27 ] <- FALSE #  STARCHT1 
-categoricalList[ 28 ] <- FALSE #  SUGART1 
-categoricalList[ 29 ] <- FALSE #  FIBRET1 
-categoricalList[ 30 ] <- FALSE #  ALCT1 
-categoricalList[ 31 ] <- FALSE #  PREVAT1 
-categoricalList[ 32 ] <- FALSE #  PROVAT1 
-categoricalList[ 33 ] <- FALSE #  RETEQT1 
-categoricalList[ 34 ] <- FALSE #  B1T1 
-categoricalList[ 35 ] <- FALSE #  B2T1 
-categoricalList[ 36 ] <- FALSE #  B3T1 
-categoricalList[ 37 ] <- FALSE #  NIACINT1 
-categoricalList[ 38 ] <- FALSE #  FOLATT1 
-categoricalList[ 39 ] <- FALSE #  FOLICT1 
-categoricalList[ 40 ] <- FALSE #  TOTFOLT1 
-categoricalList[ 41 ] <- FALSE #  FOLEQT1 
-categoricalList[ 42 ] <- FALSE #  B6T1 
-categoricalList[ 43 ] <- FALSE #  B12T1 
-categoricalList[ 44 ] <- FALSE #  VITCT1 
-categoricalList[ 45 ] <- FALSE #  VITET1 
-categoricalList[ 46 ] <- FALSE #  CALCT1 
-categoricalList[ 47 ] <- FALSE #  IODINET1 
-categoricalList[ 48 ] <- FALSE #  IRONT1 
-categoricalList[ 49 ] <- FALSE #  MAGT1 
-categoricalList[ 50 ] <- FALSE #  PHOST1 
-categoricalList[ 51 ] <- FALSE #  POTAST1 
-categoricalList[ 52 ] <- FALSE #  SELT1 
-categoricalList[ 53 ] <- FALSE #  SODIUMT1 
-categoricalList[ 54 ] <- FALSE #  ZINCT1 
-categoricalList[ 55 ] <- FALSE #  CAFFT1 
-categoricalList[ 56 ] <- FALSE #  CHOLT1 
-categoricalList[ 57 ] <- FALSE #  SATFATT1 
-categoricalList[ 58 ] <- FALSE #  MUFATT1 
-categoricalList[ 59 ] <- FALSE #  PUFATT1 
-categoricalList[ 60 ] <- FALSE #  LAT1 
-categoricalList[ 61 ] <- FALSE #  ALAT1 
-categoricalList[ 62 ] <- FALSE #  LCN3T1 
-categoricalList[ 63 ] <- FALSE #  TRANST1 
-categoricalList[ 64 ] <- FALSE #  PROPER1 
-categoricalList[ 65 ] <- FALSE #  FATPER1 
-categoricalList[ 66 ] <- FALSE #  LAPER1 
-categoricalList[ 67 ] <- FALSE #  ALAPER1 
-categoricalList[ 68 ] <- FALSE #  CHOPER1 
-categoricalList[ 69 ] <- FALSE #  SUGPER1 
-categoricalList[ 70 ] <- FALSE #  STARPER1 
-categoricalList[ 71 ] <- FALSE #  ALCPER1 
-categoricalList[ 72 ] <- FALSE #  SATPER1 
-categoricalList[ 73 ] <- FALSE #  TRANPER1 
-categoricalList[ 74 ] <- FALSE #  FIBRPER1 
-categoricalList[ 75 ] <- FALSE #  MONOPER1 
-categoricalList[ 76 ] <- FALSE #  POLYPER1 
-categoricalList[ 77 ] <- FALSE #  ADTOTSE 
-categoricalList[ 78 ] <- TRUE #  BDYMSQ04 
-categoricalList[ 79 ] <- FALSE #  DIASTOL 
-categoricalList[ 80 ] <- TRUE #  DIETQ12 
-categoricalList[ 81 ] <- TRUE #  DIETQ14 
-categoricalList[ 82 ] <- TRUE #  DIETQ5 
-categoricalList[ 83 ] <- TRUE #  DIETQ8 
-categoricalList[ 84 ] <- TRUE #  DIETRDI 
-categoricalList[ 85 ] <- TRUE #  SABDYMS 
-categoricalList[ 86 ] <- TRUE #  SEX 
-categoricalList[ 87 ] <- FALSE #  SLPTIME 
-categoricalList[ 88 ] <- TRUE #  SMKDAILY 
-categoricalList[ 89 ] <- TRUE #  SMKSTAT 
-categoricalList[ 90 ] <- FALSE #  SYSTOL 
-categoricalList[ 91 ] <- TRUE #  ABSPID 
-categoricalList[ 92 ] <- FALSE #  GRAINS1N 
-categoricalList[ 93 ] <- FALSE #  WHOLGR1N 
-categoricalList[ 94 ] <- FALSE #  REFGRA1N 
-categoricalList[ 95 ] <- FALSE #  VEGLEG1N 
-categoricalList[ 96 ] <- FALSE #  GREENS1N 
-categoricalList[ 97 ] <- FALSE #  VGORSV1N 
-categoricalList[ 98 ] <- FALSE #  STARCH1N 
-categoricalList[ 99 ] <- FALSE #  LEGVEG1N 
-categoricalList[ 100 ] <- FALSE #  OTHVEG1N 
-categoricalList[ 101 ] <- FALSE #  FRUIT1N 
-categoricalList[ 102 ] <- FALSE #  FRJUIC1N 
-categoricalList[ 103 ] <- FALSE #  DAIRY1N 
-categoricalList[ 104 ] <- FALSE #  MEAT1N 
-categoricalList[ 105 ] <- FALSE #  RDMTL1N 
-categoricalList[ 106 ] <- FALSE #  RDMTLU1N 
-categoricalList[ 107 ] <- FALSE #  RDMTN1N 
-categoricalList[ 108 ] <- FALSE #  RDMTNU1N 
-categoricalList[ 109 ] <- FALSE #  RDMTNP1N 
-categoricalList[ 110 ] <- FALSE #  PLTYL1N 
-categoricalList[ 111 ] <- FALSE #  PLTYLU1N 
-categoricalList[ 112 ] <- FALSE #  FISH1N 
-categoricalList[ 113 ] <- FALSE #  EGGS1N 
-categoricalList[ 114 ] <- FALSE #  LEGMT1N 
-categoricalList[ 115 ] <- FALSE #  NUTS1N 
-categoricalList[ 116 ] <- FALSE #  WATER1N 
-categoricalList[ 117 ] <- FALSE #  UNSAT1N 
-categoricalList[ 118 ] <- FALSE #  FRESUG1N 
-categoricalList[ 119 ] <- FALSE #  ADDSUG1N 
-categoricalList[ 120 ] <- FALSE #  WATERG1N 
-categoricalList[ 121 ] <- FALSE #  PEFRESD1 
-categoricalList[ 122 ] <- FALSE #  PEADDSD1 
-categoricalList[ 123 ] <- TRUE #  ALTNTR 
-categoricalList[ 124 ] <- TRUE #  ALTRESB 
-categoricalList[ 125 ] <- TRUE #  APOBNTR 
-categoricalList[ 126 ] <- TRUE #  APOBRESB 
-categoricalList[ 127 ] <- TRUE #  B12RESB 
-categoricalList[ 128 ] <- TRUE #  BIORESPC 
-categoricalList[ 129 ] <- TRUE #  CHOLNTR 
-categoricalList[ 130 ] <- TRUE #  CHOLRESB 
-categoricalList[ 131 ] <- TRUE #  CVDMEDST 
-categoricalList[ 132 ] <- TRUE #  DIAHBRSK 
-categoricalList[ 133 ] <- TRUE #  FASTSTAD 
-categoricalList[ 134 ] <- TRUE #  FOLATREB 
-categoricalList[ 135 ] <- TRUE #  GGTNTR 
-categoricalList[ 136 ] <- TRUE #  GGTRESB 
-categoricalList[ 137 ] <- TRUE #  GLUCFPD 
-categoricalList[ 138 ] <- TRUE #  GLUCFREB 
-categoricalList[ 139 ] <- TRUE #  HBA1PREB 
-categoricalList[ 140 ] <- TRUE #  HDLCHREB 
-categoricalList[ 141 ] <- TRUE #  LDLNTR 
-categoricalList[ 142 ] <- TRUE #  LDLRESB 
-categoricalList[ 143 ] <- TRUE #  TRIGNTR 
-categoricalList[ 144 ] <- TRUE #  TRIGRESB 
-
-for (i in 1:length(categoricalList)) {
-  if (categoricalList[ i ]) {
-      dat[,i] <- as.factor(dat[  ,i])
-  }
-}
-
-# for (i in 1:length(colNames)) { cat("excludeList[[",i,"]] <- c() # ",colNames[i],"\n"); }
-
-excludeList <- list()
-
-excludeList[[ 1 ]] <- c(0,98,99) #  BMISC 
-excludeList[[ 2 ]] <- c() #  AGEC 
-excludeList[[ 3 ]] <- c(0) #  SMSBC 
-excludeList[[ 4 ]] <- c() #  COBBC 
-excludeList[[ 5 ]] <- c() #  FEMLSBC 
-excludeList[[ 6 ]] <- c(0,997,998,999) #  PHDKGWBC 
-excludeList[[ 7 ]] <- c(0,998,999) #  PHDCMHBC 
-excludeList[[ 8 ]] <- c(9996,9999) #  EXLWTBC 
-excludeList[[ 9 ]] <- c(9996, 9999) #  EXLWMBC 
-excludeList[[ 10 ]] <- c(9996 , 9999) #  EXLWVBC 
-excludeList[[ 11 ]] <- c(0,998,999) #  PHDCMWBC 
-excludeList[[ 12 ]] <- c(99998) #  BMR 
-excludeList[[ 13 ]] <- c(998) #  EIBMR1 
-excludeList[[ 14 ]] <- c(0,99) #  SF2SA1QN 
-excludeList[[ 15 ]] <- c(0,98,99) #  INCDEC 
-excludeList[[ 16 ]] <- c() #  DIABBC 
-excludeList[[ 17 ]] <- c() #  HCHOLBC 
-excludeList[[ 18 ]] <- c() #  HSUGBC 
-excludeList[[ 19 ]] <- c() #  HYPBC 
-excludeList[[ 20 ]] <- c() #  ENERGYT1 
-excludeList[[ 21 ]] <- c() #  ENRGYT1 
-excludeList[[ 22 ]] <- c() #  MOISTT1 
-excludeList[[ 23 ]] <- c() #  PROTT1 
-excludeList[[ 24 ]] <- c() #  FATT1 
-excludeList[[ 25 ]] <- c() #  CHOWSAT1 
-excludeList[[ 26 ]] <- c() #  CHOWOAT1 
-excludeList[[ 27 ]] <- c() #  STARCHT1 
-excludeList[[ 28 ]] <- c() #  SUGART1 
-excludeList[[ 29 ]] <- c() #  FIBRET1 
-excludeList[[ 30 ]] <- c() #  ALCT1 
-excludeList[[ 31 ]] <- c() #  PREVAT1 
-excludeList[[ 32 ]] <- c() #  PROVAT1 
-excludeList[[ 33 ]] <- c() #  RETEQT1 
-excludeList[[ 34 ]] <- c() #  B1T1 
-excludeList[[ 35 ]] <- c() #  B2T1 
-excludeList[[ 36 ]] <- c() #  B3T1 
-excludeList[[ 37 ]] <- c() #  NIACINT1 
-excludeList[[ 38 ]] <- c() #  FOLATT1 
-excludeList[[ 39 ]] <- c() #  FOLICT1 
-excludeList[[ 40 ]] <- c() #  TOTFOLT1 
-excludeList[[ 41 ]] <- c() #  FOLEQT1 
-excludeList[[ 42 ]] <- c() #  B6T1 
-excludeList[[ 43 ]] <- c() #  B12T1 
-excludeList[[ 44 ]] <- c() #  VITCT1 
-excludeList[[ 45 ]] <- c() #  VITET1 
-excludeList[[ 46 ]] <- c() #  CALCT1 
-excludeList[[ 47 ]] <- c() #  IODINET1 
-excludeList[[ 48 ]] <- c() #  IRONT1 
-excludeList[[ 49 ]] <- c() #  MAGT1 
-excludeList[[ 50 ]] <- c() #  PHOST1 
-excludeList[[ 51 ]] <- c() #  POTAST1 
-excludeList[[ 52 ]] <- c() #  SELT1 
-excludeList[[ 53 ]] <- c() #  SODIUMT1 
-excludeList[[ 54 ]] <- c() #  ZINCT1 
-excludeList[[ 55 ]] <- c() #  CAFFT1 
-excludeList[[ 56 ]] <- c() #  CHOLT1 
-excludeList[[ 57 ]] <- c() #  SATFATT1 
-excludeList[[ 58 ]] <- c() #  MUFATT1 
-excludeList[[ 59 ]] <- c() #  PUFATT1 
-excludeList[[ 60 ]] <- c() #  LAT1 
-excludeList[[ 61 ]] <- c() #  ALAT1 
-excludeList[[ 62 ]] <- c() #  LCN3T1 
-excludeList[[ 63 ]] <- c() #  TRANST1 
-excludeList[[ 64 ]] <- c() #  PROPER1 
-excludeList[[ 65 ]] <- c() #  FATPER1 
-excludeList[[ 66 ]] <- c() #  LAPER1 
-excludeList[[ 67 ]] <- c() #  ALAPER1 
-excludeList[[ 68 ]] <- c() #  CHOPER1 
-excludeList[[ 69 ]] <- c() #  SUGPER1 
-excludeList[[ 70 ]] <- c() #  STARPER1 
-excludeList[[ 71 ]] <- c() #  ALCPER1 
-excludeList[[ 72 ]] <- c() #  SATPER1 
-excludeList[[ 73 ]] <- c() #  TRANPER1 
-excludeList[[ 74 ]] <- c() #  FIBRPER1 
-excludeList[[ 75 ]] <- c() #  MONOPER1 
-excludeList[[ 76 ]] <- c() #  POLYPER1 
-excludeList[[ 77 ]] <- c(9996,9999) #  ADTOTSE 
-excludeList[[ 78 ]] <- c(0,6) #  BDYMSQ04 
-excludeList[[ 79 ]] <- c(0,998,999) #  DIASTOL 
-excludeList[[ 80 ]] <- c(0,6) #  DIETQ12 
-excludeList[[ 81 ]] <- c(0,6) #  DIETQ14 
-excludeList[[ 82 ]] <- c(0) #  DIETQ5 
-excludeList[[ 83 ]] <- c(0) #  DIETQ8 
-excludeList[[ 84 ]] <- c(0,3) #  DIETRDI 
-excludeList[[ 85 ]] <- c(0,8,9) #  SABDYMS 
-excludeList[[ 86 ]] <- c() #  SEX 
-excludeList[[ 87 ]] <- c(9998,9999) #  SLPTIME 
-excludeList[[ 88 ]] <- c() #  SMKDAILY 
-excludeList[[ 89 ]] <- c(0) #  SMKSTAT 
-excludeList[[ 90 ]] <- c(0,998,999) #  SYSTOL 
-excludeList[[ 91 ]] <- c() #  ABSPID 
-excludeList[[ 92 ]] <- c() #  GRAINS1N 
-excludeList[[ 93 ]] <- c() #  WHOLGR1N 
-excludeList[[ 94 ]] <- c() #  REFGRA1N 
-excludeList[[ 95 ]] <- c() #  VEGLEG1N 
-excludeList[[ 96 ]] <- c() #  GREENS1N 
-excludeList[[ 97 ]] <- c() #  VGORSV1N 
-excludeList[[ 98 ]] <- c() #  STARCH1N 
-excludeList[[ 99 ]] <- c() #  LEGVEG1N 
-excludeList[[ 100 ]] <- c() #  OTHVEG1N 
-excludeList[[ 101 ]] <- c() #  FRUIT1N 
-excludeList[[ 102 ]] <- c() #  FRJUIC1N 
-excludeList[[ 103 ]] <- c() #  DAIRY1N 
-excludeList[[ 104 ]] <- c() #  MEAT1N 
-excludeList[[ 105 ]] <- c() #  RDMTL1N 
-excludeList[[ 106 ]] <- c() #  RDMTLU1N 
-excludeList[[ 107 ]] <- c() #  RDMTN1N 
-excludeList[[ 108 ]] <- c() #  RDMTNU1N 
-excludeList[[ 109 ]] <- c() #  RDMTNP1N 
-excludeList[[ 110 ]] <- c() #  PLTYL1N 
-excludeList[[ 111 ]] <- c() #  PLTYLU1N 
-excludeList[[ 112 ]] <- c() #  FISH1N 
-excludeList[[ 113 ]] <- c() #  EGGS1N 
-excludeList[[ 114 ]] <- c() #  LEGMT1N 
-excludeList[[ 115 ]] <- c() #  NUTS1N 
-excludeList[[ 116 ]] <- c() #  WATER1N 
-excludeList[[ 117 ]] <- c() #  UNSAT1N 
-excludeList[[ 118 ]] <- c() #  FRESUG1N 
-excludeList[[ 119 ]] <- c() #  ADDSUG1N 
-excludeList[[ 120 ]] <- c() #  WATERG1N 
-excludeList[[ 121 ]] <- c() #  PEFRESD1 
-excludeList[[ 122 ]] <- c() #  PEADDSD1 
-excludeList[[ 123 ]] <- c(0,8) #  ALTNTR 
-excludeList[[ 124 ]] <- c(97,98) #  ALTRESB 
-excludeList[[ 125 ]] <- c(0,8) #  APOBNTR 
-excludeList[[ 126 ]] <- c(97,98) #  APOBRESB 
-excludeList[[ 127 ]] <- c(97,98) #  B12RESB 
-excludeList[[ 128 ]] <- c(0) #  BIORESPC 
-excludeList[[ 129 ]] <- c(0,8) #  CHOLNTR 
-excludeList[[ 130 ]] <- c(97,98) #  CHOLRESB 
-excludeList[[ 131 ]] <- c(0,8) #  CVDMEDST 
-excludeList[[ 132 ]] <- c(0,8) #  DIAHBRSK 
-excludeList[[ 133 ]] <- c(0) #  FASTSTAD 
-excludeList[[ 134 ]] <- c(97,98) #  FOLATREB 
-excludeList[[ 135 ]] <- c(8) #  GGTNTR 
-excludeList[[ 136 ]] <- c(97,98) #  GGTRESB 
-excludeList[[ 137 ]] <- c(0,8) #  GLUCFPD 
-excludeList[[ 138 ]] <- c(97,98) #  GLUCFREB 
-excludeList[[ 139 ]] <- c(7,8) #  HBA1PREB 
-excludeList[[ 140 ]] <- c(7,8) #  HDLCHREB 
-excludeList[[ 141 ]] <- c(0,8) #  LDLNTR 
-excludeList[[ 142 ]] <- c(97,98) #  LDLRESB 
-excludeList[[ 143 ]] <- c(0,8) #  TRIGNTR 
-excludeList[[ 144 ]] <- c(97,98) #  TRIGRESB 
-
-for (i in 1:length(excludeList)) {
-  dat[ dat[,i]%in%excludeList[[ i ]],i] <- NA
-}
-
-``` 
-```{R echo=FALSE}
-#Remove any variables with more than 50% NAs
-keepR = which(apply(is.na(dat), 1, mean)<= 1) #keep rows where there are less than 100% NAs
-keepC = which(apply(is.na(dat), 2, mean) <= 0.5) #keep columns where there are less than 50% NAs
-proj_dat = dat[keepR, keepC]
-```
-
 #Data Clean
 ```{r echo=FALSE}
-DataC<-proj_dat[proj_dat$AGEC>=18 & proj_dat$FATPER1<=25 & proj_dat$CHOPER1>=55,]
-
-high.carb<-DataC$CHOPER1>55
-high.protein<-DataC$PROPER1>25
-high.fat<-DataC$FATPER1>35
-low.carb = DataC$CHOPER1<45
-low.protien=DataC$PROPER1<15
-low.fat = DataC$FATPER1<20
+Data <- read.csv("cleanedData.csv")
+dim(Data)
+adultData<-Data[Data$AGEC>=18,]
+# low.fat_high.carb<-Data$FATPER1<25 & Data$CHOPER1>55
+# high.protein_low.carb<-Data$PROPER1>20 & Data$CHOPER1<45
+# high.fat_low.carb<-Data$FATPER1>30 & Data$CHOPER1<45
+carb.cat<-cut(adultData$CHOPER1,
+              breaks=c(-1,45,65,100),
+              labels=c('low','medium','high'))
+fat.cat<-cut(adultData$FATPER1,
+             breaks=c(-1,20,35,100),
+             labels=c('low','medium','high'))
+protein.cat<-cut(adultData$PROPER1,
+                 breaks=c(-1,15,25,100),
+                 labels=c('low','medium','high'))
 
 #data<-na.omit(data.frame(BMR=DataC$BMR,Sex=sex,Diet=ifDiet,EIBMR=DataC$EIBMR1))
-obese<-factor(ifelse(DataC$BMISC>=30,'1','0'))
-y = obese
-X = DataC[,c("BDYMSQ04","BMR","SEX","HYPBC","EIBMR1","ADTOTSE")]
-summary(X)
-summary(y)
-
-```
-```{r echo=FALSE}
+obese<-factor(ifelse(adultData$BMISC>=30,'1','0'))
+Xy =na.omit(cbind(adultData[,c("BDYMSQ04","BMR","SEX","EIBMR1","ADTOTSE","CHOPER1","FATPER1","PROPER1")],obese))
+X<-Xy[,-ncol(Xy)]
+y<-Xy[,ncol(Xy)]
 #Code the categorical variables as factors.
 X$SEX = as.numeric(X$SEX=="1")
 #sex<-factor(ifelse(DataC$SEX==1,'male','female'))
-X$BDYMSQ04=factor(ifelse(X$BDYMSQ04 == 5, 'no diet', 'diet'))
-X$HYPBC = as.factor(X$HYPBC)
+X$BDYMSQ04=as.numeric(ifelse(X$BDYMSQ04 == 5, '0', '1'))
 summary(X)
 ```
 
-Idenfity the samples containing missing values.
-```{r,echo=TRUE}
-# This function identifies whether a vector contains any missing values
-any.na = function(x) { return(any(is.na(x))); }
-
-# Identify samples with missing value
-# ``apply'' the function ``any.na'' to the rows of ``X''
-inds1 = which(apply(X,1,any.na))
-#Some samples have missing.
-inds2 = which(X$BDYMSQ04=="" & X$BMR=="" & X$EIBMR1=="" & X$ADTOTSE=="")
-#Cobmine the indicies containng missing values.
-inds3 = c(inds1,inds2)
-#The following samples contain missing values
-length(inds3)
-```
-There are 170 samples containing missing values and Remove samples that contain missing values
-```{r,echo=TRUE}
-y = y[-inds3]
-X = X[-inds3,]
-n = length(y)
-```
 # LDA
 
 ```{r,echo=FALSE}
@@ -439,20 +97,24 @@ cv.da = function(X,y,method=c("lda","qda"),V,seed=NA)
 
 Fit the LDA method
 ```{r,echo=TRUE}
+n = length(y)
 dat = data.frame(y,X)
-X1 = model.matrix(~-1+BMR+SEX+EIBMR1+ADTOTSE,data=dat)
-#remove variable +BDYMSQ04+HYPBC?????
+X1 = model.matrix(~-1+BMR+SEX+EIBMR1+ADTOTSE+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
 X1 = data.frame(X1)
 summary(X1)
 res <- lda(y~., data=X1,subset=1:n)
 res
+
 ```
 ##Comment:
 The above output suggests the following interpretations for each of the variables.
 * People who have higher BMR are more likely to obese
 * Sex = 1 for males. So females are more likely to obese
-* Lower EIBMR1(Energy intake) increases obese probability (since the coefficent -3.081292e-01 is negative).
-* Lower ADTOTSE(Total mins spent sitting or lying down) increases obese probability (since the coefficent -5.487492e-05is negative).
+* Lower EIBMR1(Energy intake) increases obese probability (since the coefficent -0.377 is negative).
+* Lower ADTOTSE(Total mins spent sitting or lying down) increases obese probability (since the coefficent -3.533708e-05 is negative).
+* People who have high fat and high carbon diet type are less likely to obese
+* People who have high protein diet type increase the probability of obesity
+
 
 ##CV error
 ```{r,echo=TRUE}
@@ -461,14 +123,13 @@ res.lda = cv.da(X1,y,method="lda",V,seed=1)
 res.lda 
 ```
 Comment:
-The CV error for LDA is ... percent????
-
+The CV error for LDA is 18.232 percent
 
 # CART
 
 ```{r,echo=TRUE}
 library(rpart)
-X2 = model.matrix(~-1+BMR+SEX+EIBMR1+ADTOTSE+BDYMSQ04+HYPBC,data=dat)
+X2 = model.matrix(~-1+BMR+SEX+EIBMR1+ADTOTSE+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
 # Be careful as coding y as a factor here, Otherwise R will do a regression tree rather than a classification tree
 res.rpart <- rpart(as.factor(y) ~ X2, data=dat)
 
@@ -530,7 +191,8 @@ cv.rpart = function(X,y,V,seed=NA)
 res.rpart = cv.rpart(X2,y,V,seed=1)
 res.rpart
 ```
-
+Comment:
+The CV error for CART is 17.551 percent
 
 # Logistic regression
 
@@ -539,11 +201,11 @@ Fit a logistic regression model on most of the data.
 res.glm = glm(y~.,family=binomial,data=X1)
 summary(res.glm)
 ```
-
-The full model has the coefficeints for BMR and SEX as statisticlly
+##Comment:
+The full model has the coefficeints for BMR, SEX, EIBMR1, ADTOTSE, BDYMSQ04, CHOPER1 as statisticlly
 signifficantly different from zero at the 0.05 level. Te fitted model is
 $$
-\mbox{logit}(p) = -0.1169 + 0.001849 \cdot\mbox{BMR} - 3.258 \cdot \mbox{SEX} - 0.3674 \cdot\mbox{EIBMR1} -0.00006928 \cdot \mbox{ADTOTSE} 
+\mbox{logit}(p) = -0.1093 + 0.001879 \cdot\mbox{BMR} - 3.423 \cdot \mbox{SEX} - 0.7113 \cdot\mbox{EIBMR1} -0.00005952 \cdot \mbox{ADTOTSE} + 0.3802 \cdot \mbox{BDYMSQ04} - 0.01014 \cdot \mbox{CHOPER1} 
 $$
 where $p$ is the probability of obesity.
 
@@ -604,13 +266,14 @@ cv.glm = function(X,y,V,seed=NA)
 res.glm.cv = cv.glm(X1,y,V,seed=1)
 res.glm.cv
 ```
+Comment:
+The CV error for glm is 17.78 percent
 
-
-#summary of cv errors
+#summary
 ```{r,echo=FALSE}
 ht <- hux(
-        Methods = c('LDA',  'rpart', 'glm'),
-        Errors = 100*c(min(cv.errors),res.lda,res.rpart,res.glm.cv,), 
+        Methods = c( 'LDA', 'rpart', 'glm'),
+        Errors = 100*c(res.lda, res.rpart, res.glm.cv), 
         add_colnames = TRUE
       )
 
@@ -623,6 +286,9 @@ width(ht)              <- 0.35
 
 ht
 ```
+The effect of different predictors on obesity are relatively
+consistent. In summary:
+
 
 
 
