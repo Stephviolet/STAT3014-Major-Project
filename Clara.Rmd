@@ -175,7 +175,23 @@ library(rpart.plot)
 rpart.plot(res.rpart,type=0,extra=1,main="CART fit",cex.main=2,cex=1)
 ```
 ##Comment:
-Interpret??
+* 91.4 percent of people whose BMR are less than 6103 are normal (not obese).
+* 83.3 percent of male whose BMR are between 6103 and 8297 are normal.
+* 68.5 percent of male whose BMR are greater than 8297 are obese
+* 54.2 percent of female whose BMR are between 6103 and 6390 are normal
+* 80.1 percent of female whose BMR are greater than 6390 are obese
+
+
+| Obesity | BMR < 6103 | 6103 < BMR < 8297 | BMR > 8297 |
+|---------|----------|---------------|----------|
+| male    | 8.6%     | 6.7%          | 68.5%    |
+
+
+
+| Obesity | BMR < 6103 | 6103 < BMR < 6390 | BMR > 6390 |
+|---------|----------|---------------|----------|
+| female  | 8.6%     | 45.8%         | 80.1%    |
+
 
 cross-validation for rpart.
 ```{r,echo=FALSE}
