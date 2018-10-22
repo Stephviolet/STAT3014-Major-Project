@@ -1,33 +1,99 @@
+```{R}
+proj_dat = read.csv("C:/Users/JPRS1/Desktop/STAT3014/Major project/STAT3014-Major-Project",row.names=1)
+dataSteph = proj_dat[which(proj_dat$AGEC >= 18), ]
+
+carb = cut(dataSteph$CHOPER1, breaks=c(-1, 45, 65, 100), labels=c("low", "med", "high"))
+protein = cut(dataSteph$PROPER1, breaks=c(-1, 15, 25, 100), labels=c("low", "med", "high"))
+fat = cut(dataSteph$FATPER1, breaks=c(-1, 20, 35, 100), labels=c("low", "med", "high"))
+
+library(MASS)
+#bmi, age, exercise, 
+dat1.var = dataSteph[,c(1,2,8, 11, 12, 14, 77, 86, 64, 65, 68)]
+#dat1.var = dataSteph[,c(2,3,9, 12, 13, 15, 78, 87, 65, 66, 69)]
+names(dat1.var) = c("bmi", "age", "mins.phys", "waist.cm", "bmr", "ses", "mins.sed", "sex", "protein", "fat", "carbs")
+```
+
+
 Part 3 - Model Selection using AIC
 Stepwise forward regression was used to select the most informative variables, which were included in a generalised linear model (GLM). GLMs were used because they are able to handle different types of data including binary, categorical, and numerical. Logistic regression was used for binary data and classical regression was used for continuous data. A 5% significance level was chosen as a threshold for the inclusion of the model variables.
-In this section the aim was to determine the effectiveness of the three macro- nutrients for predicting gender, socio-economic status, Basal Betabolic Rate (BRM), BMI, age, and mintues spent sedentary for subjects in this study. These variables were chosen because they were found to be significant predictors of BMI. Can we determine the type of diet someone may have according to their SES, age, gender, waist measurement, bmr, time spent sedentary, energy intake, and time spend doing exercise.  
+In this section the aim was to determine the effectiveness of the three macro- nutrients for predicting gender, socio-economic status, Basal Betabolic Rate (BRM), BMI, age, and mintues spent sedentary for subjects in this study. These variables were chosen because they were found to be significant predictors of BMI. Can we determine the type of diet someone may have according to their SES, age, gender, waist measurement, bmr, time spent sedentary, energy intake, and time spend doing exercise. 
+
+Test to see whether people of different diets have different behaviours and demographics. 
 
 BMI - BMISC
 ```{r}
-setwd("C:/Users/luodo/Documents/GitHub/STAT3014-Major-Project")
-proj_dat = read.csv("cleanedData.csv", row.names = 1)
-dataSteph = proj_dat[which(proj_dat$AGEC >= 18),]
-carb = cut(dataSteph$CHOPER1, breaks = c(-1, 45, 65, 100), labels = c("low", "med", "high"))
-protein = cut(dataSteph$PROPER1, breaks = c(-1, 15, 25, 100), labels = c("low", "med", "high"))
-fat = cut(dataSteph$FATPER1, breaks = c(-1, 20, 35, 100), labels = c("low", "med", "high"))
-dat1.var = dataSteph[, c(1, 2, 8, 11, 12, 14, 77, 86, 64, 65, 68)]
-names(dat1.var) = c("bmi", "age", "mins.phys", "waist.cm", "bmr", "ses", "mins.sed", "sex", "protein", "fat", "carbs")
+bmi.class = cut(dat1.var$bmi, breaks=c(18.5, 30, 65), labels=c("norm","obese")) #categorical
+bmi.num = ifelse(bmi.class=="norm", 0,1) #binary
 
-bmi = dat1.var$bmi
-aovadd.bmi = lm(bmi~protein+fat+carb)
-bestmod.bmi = stepAIC(aovadd.bmi , scope = list(upper = ~protein*fat*carb, lower = ~1))
-summary(bestmod.bmi)
+bmi.macro = glm(bmi.num~protein+carb+fat, family = binomial)
+best.marco = stepAIC(bmi.macro, scope = list(upper = ~protein*carb*fat, lower = ~1))
+summary(best.marco)
+
+#deviance test
+mod12 = glm(bmi.num~protein, family = binomial)
+mod13 = glm(bmi.num~fat, family = binomial)
+mod14 = glm(bmi.num~carb, family = binomial)
+a = anova(mod12, test = "Chisq")
+b = anova(mod13, test = "Chisq")
+c = anova(mod14, test = "Chisq")
+a #protein is significant. So now look for protein and fat and protein and carb. 
+b
+c
+
+mod15 = glm(bmi.num~protein+fat, family = binomial)
+mod16 = glm(bmi.num~protein+carb, family = binomial)
+d = anova(mod15, test = "Chisq")
+e = anova(mod16, test = "Chisq")
+d
+e
+
+pars = coef(best.marco)
+logistic = function(x){1/(1+exp(-x))}
+prop.low = logistic(pars[1])
+prop.med = logistic(pars[1]+pars[2])
+prop.high = logistic(pars[1]+pars[2]+pars[3])
 ```
-Best model with significance of 0.05 is given as
-$Y_{ijk} = 27.05+ 0.51*MedProtein+ 1.58HighProtein$
+For BMI as a binary varible we have the best model using stepAIC as:
+$log(p/1-p) =  -1.12 + 0.18*MedProtein + 0.53*HighProtein$
+The estimated proprotion of obese people within the low protein group is 24.6% (since only working with intercept). 
+The estimated proprotion of obese people within the medium protein group is 28.2%. 
+The estimated proprotion of obese people within the high protein group is 40.1%.
 
 Wasit measurement
 ```{r}
+#AIC model selection
 waist = dat1.var$waist.cm
 aovwaist = lm(waist~protein+fat+carb)
 bestmod.waist = stepAIC(aovwaist , scope = list(upper = ~protein*fat*carb, lower = ~1))
 summary(bestmod.waist)
+
+#deviance test
+mod17 = lm(waist~protein)
+mod18 = lm(waist~fat)
+mod19 = lm(waist~carb)
+a = anova(mod17)
+b = anova(mod18)
+c = anova(mod19)
+a #protein is significant and explains the most of the within factor variation out of the three variables. 
+b
+c 
+
+#protein
+mod20 = glm(waist~protein+fat) #not signif
+mod21 = glm(waist~protein+carb) #not signif
+d = anova(mod20)
+e = anova(mod21)
+d
+e
+
+#According to the AIC - NOT WORKING
+pars = coef(bestmod.waist)
+logistic = function(x){1/(1+exp(-x))}
+prop.low = logistic(pars[1])
+prop.med = logistic(pars[1]+pars[3])
+prop.high = logistic(pars[1]+pars[3]+pars[4])
 ```
+The best model relies on on an interaction between protein and carbs using AIC Using the deviance test we find the the best model relies only on protein. 
 
 BMR
 ```{r}
@@ -47,10 +113,36 @@ summary(bestmod.sed)
 
 Sex
 ```{R}
+#AIC
 sex = ifelse(dat1.var$sex==1,1,0) #1 = male
 glm.sex = glm(sex~protein+fat+carb, family= binomial)
 bestmod.sex = stepAIC(glm.sex, scope = list(upper = ~protein*fat*carb, lower = ~1))
 summary(bestmod.sex)
+
+#deviance test
+#deviance test
+mod17 = lm(sex~protein, family = "binomial")
+mod18 = lm(sex~fat,  family = "binomial")
+mod19 = lm(sex~carb,  family = "binomial")
+a = anova(mod17, test = "Chisq")
+b = anova(mod18, test = "Chisq")
+c = anova(mod19, test = "Chisq")
+a 
+b #signif: explains more within SS variation
+c  #signif
+
+#fat
+mod20 = glm(sex~fat+protein, family = "binomial") #not signif
+mod21 = glm(sex~fat+carb, family = "binomial") #signif
+d = anova(mod20, test = "Chisq")
+e = anova(mod21, test = "Chisq")
+d
+e
+
+#fat+carb
+mod22 = glm(sex~fat+carb+protein, family = "binomial") #signif
+f = anova(mod22, test = "Chisq") 
+f
 
 logistic = function(x){1/(1+exp(-x))}
 p.add = logistic(0.46 - 0.48- 0.31 - 0.68- 0.27 - 0.72 + 0.54) #probabiliy of being male and being on this diet is 19%
@@ -68,6 +160,29 @@ ses = ifelse(dataSteph$SF2SA1QN>4,1,0) #decile [1:4] = 0
 glmadd.ses = glm(ses~protein+fat+carb, family= binomial)
 bestmod.ses = stepAIC(glmadd.ses, scope = list(upper = ~protein*fat*carb, lower = ~1))
 summary(bestmod.ses)
+
+mod23 = lm(ses~protein, family = "binomial")
+mod24 = lm(ses~fat,  family = "binomial")
+mod25 = lm(ses~carb,  family = "binomial") 
+a = anova(mod23, test = "Chisq")
+b = anova(mod24, test = "Chisq")
+c = anova(mod25, test = "Chisq")
+a 
+b 
+c #signif
+
+#carbs
+mod20 = glm(sex~carb+protein, family = "binomial") #signif
+mod21 = glm(sex~carb+fat, family = "binomial") #signif
+d = anova(mod20, test = "Chisq")
+e = anova(mod21, test = "Chisq")
+d
+e
+
+#fat+carb
+mod22 = glm(sex~fat+carb+protein, family = "binomial") #signif
+f = anova(mod22, test = "Chisq") 
+f
 ```
 Beginning with the full additive model out best model according to one step AIC with a significance level of 0.05 is ses ~ protein + fat + carb + protein:fat. Summary statistics give the model as:
 $Y_{ijk} =  -1.19 - 0.21*MedCarb - 0.54*HighCarb$
@@ -106,7 +221,7 @@ summary(bestmod.age)
 ```
 Best model with a significance of 0.05 is the full additive model. The model is 
 $Y_{ijk} = 51.25 -3.16*HighFat-3.22*MedCarb -6.25*HighCarb$
-
+The mean age in the medium fat, protien, and carb group is 
 
 
 Code
@@ -299,3 +414,98 @@ lines(cv.estimation[,2],lty=2,col='blue')
 lines(cv.estimation[,3],lty=2,col='blue')
 
 ```
+
+
+
+
+
+
+Proportions across diets
+- Do men have higher protein diets than women
+- Do the proportions macro- nutrients in a persons diet differ across SES areas?
+- Do macro- nutrient levels differ across gender?
+
+$H_0: \mu_{protein female} = \mu_{protein male} = \mu_{carbs}$ versus $H_1: \mu_{protein female} != \mu_{protein male$
+```{r}
+#gender and diets
+library(ggplot2)
+ggplot(dat1.var, aes(x=sex, y=protein, group = sex)) + geom_boxplot() # 2 = female
+lm.out = aov(protein~sex, data = dat1.var) #difference between groups
+par(mfrow=c(2,2)) # assumptions not met
+boxplot(lm.out$residuals) 
+plot(lm.out, which=1:3) 
+summary(lm.out)
+
+
+ggplot(dat1.var, aes(x=sex, y=carbs, group = sex)) + geom_boxplot()
+lm.2 = aov(carbs~sex, data = dat1.var)
+par(mfrow=c(2,2)) # assumptions not met
+boxplot(lm.2$residuals) 
+plot(lm.2, which=1:3) 
+summary(lm.2)
+
+ggplot(dat1.var, aes(x=sex, y=fat, group = sex)) + geom_boxplot()
+lm.3 = aov(fat~sex, data = dat1.var)
+par(mfrow=c(2,2)) # assumptions not met
+boxplot(lm.3$residuals) 
+plot(lm.3, which=1:3) 
+summary(lm.3)
+```
+
+#independence test for macronutrients levels and ses
+```{r}
+ses1 = cut(dat1.var$ses, breaks=c(0,4,5), labels=c("low", "med"))
+dat1.var$ses.lvl = ses1
+dat1.var$protein.lvl = protein
+dat1.var$fat.lvl = fat
+dat1.var$carbs.lvl = carb
+
+
+ses.protein = table(dat1.var$protein.lvl,dat1.var$ses.lvl)
+chisq.test(ses.protein) #p > 0.05 so maintain null hypothesis that protein level is independent of ses
+
+ses.fat = table(dat1.var$fat.lvl,dat1.var$ses.lvl)
+chisq.test(ses.fat) #p > 0.05 so maintain null hypothesis that fat level is independent of ses
+
+ses.carbs = table(dat1.var$carbs.lvl,dat1.var$ses.lvl)
+chisq.test(ses.carbs) # p < 0.05 so reject null hypothesis that carb level is independent of ses
+```
+
+#independence for macro and gender
+```{r}
+gen.protein = table(dat1.var$protein.lvl,dat1.var$sex)
+chisq.test(gen.protein) # maintain null
+
+gen.fat = table(dat1.var$fat.lvl,dat1.var$sex)
+chisq.test(gen.fat) #reject null
+
+gen.carbs = table(dat1.var$carbs.lvl,dat1.var$sex)
+chisq.test(gen.carbs) #reject null
+```
+
+#indep for BMI class and macro
+```{r}
+dat1.var$bmi.lvl = bmi.class
+
+bmi.protein = table(dat1.var$protein.lvl,dat1.var$bmi.lvl)
+chisq.test(bmi.protein) #reject null
+
+bmi.fat = table(dat1.var$fat.lvl,dat1.var$bmi.lvl)
+chisq.test(bmi.fat) #maintain null
+
+bmi.carbs = table(dat1.var$carbs.lvl,dat1.var$bmi.lvl)
+chisq.test(bmi.carbs) #maintain null
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
