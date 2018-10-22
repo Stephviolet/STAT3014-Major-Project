@@ -2,7 +2,10 @@
 title: "loglinear"
 author: "Dong Luo"
 date: "22 October 2018"
-output: pdf_document
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 # Data Cleaning
@@ -40,7 +43,7 @@ protein.cat<-cut(adultData$PROPER1,
 
 By dividing we are interested in the mean proportion of each diet types, so as to identify what are the most popular diet types.
 
-```{r}
+```{r echo=FALSE}
 tables.3way<-table(carb.cat,fat.cat,protein.cat)
 table.y<-NULL
 for(i in 1:3){
@@ -67,9 +70,58 @@ diet.prop<-diet.prop[order(
 kable_styling(kable(
   head(diet.prop),
   row.names = F,
+  booktabs=TRUE,
+  caption = "Proportion of the top 6 diet types"
+  ),
+  latex_options = 'hold_position',
+  position = "center")
+```
+
+We may be interested to fit log-linear models to analyse this three-way contingency tables to see if there is any independence underlying.  
+We start with the addtivie table, which stands for the complete independence.
+
+```{r additive, echo=FALSE, warning=FALSE}
+glm.additive<-glm(y~carb+fat+protein,
+                family='poisson',data=loglin.dat)
+#glm.additive$dev
+```
+
+We found that the deviance for the additive model (including all three factors) is `r glm.additive$dev`. We compare it with the models with one two way interaction. There are three such models, and their residual deviance is shown as below.
+
+```{r echo=FALSE}
+# additive model is for complete independence
+glm.cf<-glm(y~carb+fat+protein+carb:fat,
+                family='poisson',data=loglin.dat)
+glm.cp<-glm(y~carb+fat+protein+carb:protein,
+          family='poisson',data=loglin.dat)
+glm.fp<-glm(y~carb+fat+protein+fat:protein,
+          family='poisson',data=loglin.dat)
+#c(glm.cf$dev,glm.cp$dev,glm.fp$dev)
+dev1.table<-data.frame('Carb:Fat'=glm.cf$dev,
+           'Carb:Protein'=glm.cp$dev,
+           'Fat:Protein'=glm.fp$dev)
+rownames(dev1.table)<-c('Residual Deviance')
+kable_styling(kable(
+  dev1.table,
+  row.names = F,
   format='latex',
   booktabs=TRUE),position = "center")
 ```
+
+The model with `carb:fat` interaction has the lowest deviance. The difference of deviance between this model and the additive model is `r glm.additive$dev-glm.cf$dev`. The two models are nested and when we compare them, the $H_0$ is the additive model (the smaller model).
+
+$$
+\text{M1}\,(H_0):
+\hat{\mu}=\beta_0+\alpha_i+\beta_j+\gamma_k,
+$$
+
+where $\alpha_i$, $\beta_j$, and $\gamma_k$ denote the $i^{th},j^{th}$ and $k^{th}$ group of carbohydrate, fat, and protein levels
+$$
+\text{M2}\,(H_A): \hat{\mu}=\beta_0+\alpha_i+\beta_j+\gamma_k+(\alpha\beta)_{ij}
+$$
+Under $H_0$, the difference in deviance follows a $\chi^2$ distribution whose degrees of freedom equals the difference in residual degrees of freedom of the two models.  
+The difference in degrees of freedom is 4, since each factor has 3 levels, so adding an interaction term would increase the number of parameters by $(3-1)\times(3-1)=4$ in the model.
+The $p$-value for the test is close to 0, so we would reject the null hypothesis and prefer the model with `carb:fat` interaction. This model with one interaction term stands for the block independence.
 
 
 
