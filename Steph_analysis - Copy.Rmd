@@ -148,7 +148,7 @@ bestmod.bmr = stepAIC(lm(bmr~protein*fat*carb) , scope = list(upper = ~protein*f
 summary(bestmod.bmr)
 
 #deviance test
-mod17 = lm(bmr~protein)
+mod17 = lm(bmr~protein) #significant at 0.1 level
 mod18 = lm(bmr~fat)
 mod19 = lm(bmr~carb)
 a = anova(mod17)
@@ -161,7 +161,7 @@ c
 
 ```
 AIC: bmr ~ protein + fat + carb + protein:fat + protein:carb + fat:carb
-Deviance
+Deviance: bmr~protein
 Choose AIC since the AIC has a lower F statistic than the Devicance test. 
 
 Sedentary
@@ -196,11 +196,16 @@ d = anova(mod20)
 d #signif
 
 #interaction
-mod20 = lm(sed~fat*protein*carb)
+mod20 = lm(sed~fat*protein*carb) #not signif
 d = anova(mod20)
 d 
+
+#mean of each group
+
 ```
-Best model is the full additive model.
+AIC: sed ~ protein + fat + carb
+Deviance: sed ~ protein + fat + carb
+
 
 Sex
 ```{R}
@@ -210,7 +215,6 @@ glm.sex = glm(sex~protein+fat+carb, family= binomial)
 bestmod.sex = stepAIC(glm.sex, scope = list(upper = ~protein*fat*carb, lower = ~1))
 summary(bestmod.sex)
 
-#deviance test
 #deviance test
 mod17 = lm(sex~protein, family = "binomial")
 mod18 = lm(sex~fat,  family = "binomial")
@@ -235,14 +239,15 @@ mod22 = glm(sex~fat+carb+protein, family = "binomial") #signif
 f = anova(mod22, test = "Chisq") 
 f
 
-logistic = function(x){1/(1+exp(-x))}
-p.add = logistic(0.46 - 0.48- 0.31 - 0.68- 0.27 - 0.72 + 0.54) #probabiliy of being male and being on this diet is 19%
-p.add
+fat[which.max(glm.sex$fitted.values)]
+protein[which.max(glm.sex$fitted.values)]
+carb[which.max(glm.sex$fitted.values)]
+max(glm.sex$fitted.values)
+
 ```
-The suboptimal model is : sex~protein+fat+carb+protein:fat when using a significanc level of 0.05. This has the lowest AIC out of all one step models beginning with the full additive model. Our model becomes:
-$log(p/(1-p)) = 0.46 - 0.48*HighProtein - 0.31*MedFat - 0.68*HighFat- 0.27*MedCarb - 0.72*HighCarb + 0.54*HighProtein:HighFat$
-This tells us that:
-- Less high protein diets 
+AIC: sex ~ protein + fat + carb + protein:fat
+Deviance: sex ~ protein + fat + carb + protein:fat
+The expected proportion of males in the the low fat, low protein, low carb group is 59%. 
 
 SES
 ```{r}
@@ -252,9 +257,9 @@ glmadd.ses = glm(ses~protein+fat+carb, family= binomial)
 bestmod.ses = stepAIC(glmadd.ses, scope = list(upper = ~protein*fat*carb, lower = ~1))
 summary(bestmod.ses)
 
-mod23 = lm(ses~protein, family = "binomial")
-mod24 = lm(ses~fat,  family = "binomial")
-mod25 = lm(ses~carb,  family = "binomial") 
+mod23 = glm(ses~protein, family = "binomial")
+mod24 = glm(ses~fat,  family = "binomial")
+mod25 = glm(ses~carb,  family = "binomial") 
 a = anova(mod23, test = "Chisq")
 b = anova(mod24, test = "Chisq")
 c = anova(mod25, test = "Chisq")
@@ -263,43 +268,32 @@ b
 c #signif
 
 #carbs
-mod20 = glm(sex~carb+protein, family = "binomial") #signif
-mod21 = glm(sex~carb+fat, family = "binomial") #signif
+mod20 = glm(sex~carb+protein, family = "binomial") 
+mod21 = glm(sex~carb+fat, family = "binomial") #most signif
 d = anova(mod20, test = "Chisq")
 e = anova(mod21, test = "Chisq")
 d
 e
 
 #fat+carb
-mod22 = glm(sex~fat+carb+protein, family = "binomial") #signif
+mod22 = glm(sex~carb+fat+protein, family = "binomial") #signif
 f = anova(mod22, test = "Chisq") 
 f
+
+#carb*fat*protein
+mod23 = glm(sex~carb*fat*protein, family = binomial)
+g = anova(mod23, test = "Chisq")
+g
+
+#percentages
+fat[which.max(glmadd.ses$fitted.values)]
+protein[which.max(glmadd.ses$fitted.values)]
+carb[which.max(glmadd.ses$fitted.values)]
+max(glmadd.ses$fitted.values)
 ```
-Beginning with the full additive model out best model according to one step AIC with a significance level of 0.05 is ses ~ protein + fat + carb + protein:fat. Summary statistics give the model as:
-$Y_{ijk} =  -1.19 - 0.21*MedCarb - 0.54*HighCarb$
-This indicates that if you are in a lo
-
-ENERGY (BMR) - EIBMR1
-```{r}
-bmr = dataSteph$EIBMR1
-aovadd.bmr = lm(bmr~protein+fat+carb)
-bestmod.bmr = stepAIC(aovadd.bmr , scope = list(upper = ~protein*fat*carb, lower = ~1))
-summary(bestmod.bmr)
-```
-Best model is given by 
-$Y_{ijk} = 1.37-0.20*MedProtein -0.47*HighProtein+ 0.16*MedFat+ 0.21HighFat -0.15*MedCarb -0.26*HighCarb+ 0.07MedProtein:MedCarb+ 0.12*HighProtein:MedCarb$
-
-
-
-Exercise - ADTOTSE
-```{r}
-sedent = dataSteph$ADTOTSE
-aovadd.sed = lm(sedent~protein+fat+carb)
-bestmod.sed = stepAIC(aovadd.sed, scope = list(upper = ~protein*fat*carb, lower = ~1))
-summary(bestmod.sed)
-```
-Best model is the full additive model with significance of 0.05. We get the model
-$Y_{ijk} = 2362.68 -91.42*MedProtein -200.97*HighProtein+ 100.89MedFat +  123.35HighFat -75.94*MedCarb$
+AIC: ses ~ protein + fat + carb + protein:fat
+Deviance: ses ~ protein + fat + carb + protein:fat
+In the low fat, medium protein, low carb diet a person from medium SES will be in this diet with a probability of 26%. 
 
 Age - using ANOVA since age is not a factor but a numercial variable. 
 ```{r}
@@ -309,9 +303,43 @@ age = dataSteph$AGEC
 aovadd.age = lm(age~protein+fat+carb)
 bestmod.age = stepAIC(aovadd.age, scope = list(upper = ~protein*fat*carb, lower = ~1))
 summary(bestmod.age)
+
+mod17 = lm(age~protein) #signif
+mod18 = lm(age~fat)
+mod19 = lm(age~carb)
+a = anova(mod17)
+b = anova(mod18)
+c = anova(mod19)
+a  
+b 
+c
+
+#protein
+mod18 = lm(age~protein+carb) #signif
+mod19 = lm(age~protein+fat)
+d = anova(mod18)
+e = anova(mod19)
+d
+e
+
+mod20 = lm(age~protein+carb+fat) #signif
+f = anova(mod20)
+f
+
+
+mod21 = lm(age~protein*carb*fat) #not signif
+g = anova(mod21)
+g
+
+#expected mean
+fat[which.max(aovadd.age$fitted.values)]
+protein[which.max(aovadd.age$fitted.values)]
+carb[which.max(aovadd.age$fitted.values)]
+max(aovadd.age$fitted.values)
 ```
-
-
+AIC: age ~ protein + fat + carb
+Deviance: age ~ protein + fat + carb
+The most extreme value is in the low fat, medium protein, low carb group. The mean age in this group is 52 years. 
 
 
 
