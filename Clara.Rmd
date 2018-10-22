@@ -1,8 +1,17 @@
 ---
 title: "Clara"
 author: "Anqi Chi SID:460204008"
+<<<<<<< HEAD
 date: "22/10/2018"
 output: pdf_document
+=======
+date: "2018 October"
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+>>>>>>> 780a6b9a975525f57598113d0798946254bf476c
 ---
 
 ```{r setup, include=FALSE}
@@ -79,6 +88,40 @@ cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interlea
 
 ```{r,echo=FALSE}
 library(MASS)
+<<<<<<< HEAD
+=======
+cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interleaved")) 
+{
+  n <- round(rep(n, length.out = 1))
+  if (!isTRUE(n > 0)) 
+    stop("'n' must be positive")
+
+  K <- round(rep(K, length.out = 1))
+  if (!isTRUE((K > 1) && K <= n)) 
+    stop("'K' outside allowable range")
+
+  type <- if (K == n) 
+    "leave-one-out"
+  else match.arg(type)
+  if (type == "random") {
+    R <- round(rep(R, length.out = 1))
+    if (!isTRUE(R > 0)) 
+      R <- 1
+    subsets <- replicate(R, sample(n))
+  }
+  else {
+    R <- 1
+    subsets <- as.matrix(seq_len(n))
+  }
+  which <- rep(seq_len(K), length.out = n)
+  if (type == "consecutive") 
+    which <- rep.int(seq_len(K), tabulate(which))
+  folds <- list(n = n, K = K, R = R, subsets = subsets, which = which)
+  class(folds) <- "cvFolds"
+  folds
+}
+# k - value of k in KNN
+>>>>>>> 780a6b9a975525f57598113d0798946254bf476c
 V =10 #number of CV folds
 # seed - (optional) internally sets the seed.
 cv.da = function(X,y,method=c("lda","qda"),V,seed=NA)
@@ -175,6 +218,7 @@ library(rpart.plot)
 rpart.plot(res.rpart,type=0,extra=1,main="CART fit",cex.main=2,cex=1)
 ```
 ##Comment:
+<<<<<<< HEAD
 * 91.4 percent of people whose BMR are less than 6103 are normal (not obese).
 * 83.3 percent of male whose BMR are between 6103 and 8297 are normal.
 * 68.5 percent of male whose BMR are greater than 8297 are obese
@@ -192,6 +236,9 @@ rpart.plot(res.rpart,type=0,extra=1,main="CART fit",cex.main=2,cex=1)
 |---------|----------|---------------|----------|
 | female  | 8.6%     | 45.8%         | 80.1%    |
 
+=======
+Interpret
+>>>>>>> 780a6b9a975525f57598113d0798946254bf476c
 
 cross-validation for rpart.
 ```{r,echo=FALSE}
@@ -328,6 +375,10 @@ We now display the results nicely using the package huxtable.
 
 ```{r,echo=FALSE}
 library(huxtable)
+<<<<<<< HEAD
+=======
+library(kableExtra)
+>>>>>>> 780a6b9a975525f57598113d0798946254bf476c
 ht <- hux(
         Methods = c( 'LDA', 'rpart', 'glm'),
         Errors = 100*c(res.lda, res.rpart, res.glm.cv), 
@@ -341,12 +392,13 @@ right_padding(ht)      <- 10
 left_padding(ht)       <- 10
 width(ht)              <- 0.35
 
-ht
+#ht
+Methods = c( 'LDA', 'rpart', 'glm')
+Errors = 100*c(res.lda, res.rpart, res.glm.cv)
+kable(data.frame(Methods,Errors))
+
 ```
+
 The effect of different predictors on obesity are relatively
 consistent. In summary:
-
-
-
-
-
+ginger
