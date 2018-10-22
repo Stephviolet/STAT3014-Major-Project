@@ -1,0 +1,322 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+```{R} 
+setwd("C:/Users/JPRS1/Desktop/STAT3014/Major project/STAT3014-Major-Project")
+proj_dat = read.csv("cleanedData.csv",row.names=1)
+dataSteph = proj_dat[which(proj_dat$AGEC >= 18), ]
+
+carb = cut(dataSteph$CHOPER1, breaks=c(-1, 45, 65, 100), labels=c("low", "med", "high"))
+protein = cut(dataSteph$PROPER1, breaks=c(-1, 15, 25, 100), labels=c("low", "med", "high"))
+fat = cut(dataSteph$FATPER1, breaks=c(-1, 20, 35, 100), labels=c("low", "med", "high"))
+
+library(MASS)
+#bmi, age, exercise, 
+dat1.var = dataSteph[,c(1,2,8, 11, 12, 14, 77, 86, 64, 65, 68)]
+names(dat1.var) = c("bmi", "age", "mins.phys", "waist.cm", "bmr", "ses", "mins.sed", "sex", "protein", "fat", "carbs")
+```
+
+#can we predict who is obese according to BMI?
+```{R}
+bmi.class = cut(dat1.var$bmi, breaks=c(18.5, 30, 65), labels=c("norm","obese")) #categorical
+bmi.num = ifelse(bmi.class=="norm", 0,1) #binary
+bmi1 = dat1.var$bmi #numeric
+# lot's of NA's
+X = data.matrix(dat1.var[2:8])
+
+#obese as binary for variables
+mod = glm(bmi.num~X, family = binomial)
+summary(mod)
+
+#obese as continuous for variables
+mod1 = glm(bmi1~X)
+summary(mod1)
+
+```
+Have a smaller AIC when the data is run as continuous instead of binary. Using the binary variable model we have a log linear model of
+$log(p/1-p) = -43.3 + 0.05*age + 0.18*waist.cm + 0.002*bmr - 0.00*mins.sed + 5.26*sex$
+This tells us that the best model for describing BMI includes the following relationships:
+- Higher age have a higher BMI
+- Larger waist measurements have higher BMI
+- Higher BMR have higher BMI
+- More minutes per week sedentary is related to a higher BMI
+- Females have a higher BMI than males
+
+#Part 3: want to see if people of different diets have different behaviours and demographics. Use deviance tests 
+
+$H_0: null model (intercept only)$
+$H_1: one factor model, protein$
+
+In both hypothesis testing using the AIC and the deviance test we failed to reject the null hypothesis and prefer the one factor model for protein. BMI is only significant with respect to protein. To fit the mean percentage of obesity.  
+Part 3 - Model Selection using AIC
+Stepwise forward regression was used to select the most informative variables, which were included in a generalised linear model (GLM). GLMs were used because they are able to handle different types of data including binary, categorical, and numerical. Logistic regression was used for binary data and classical regression was used for continuous data. A 5% significance level was chosen as a threshold for the inclusion of the model variables.
+In this section the aim was to determine the effectiveness of the three macro- nutrients for predicting gender, socio-economic status, Basal Betabolic Rate (BRM), BMI, age, and mintues spent sedentary for subjects in this study. These variables were chosen because they were found to be significant predictors of BMI. Can we determine the type of diet someone may have according to their SES, age, gender, waist measurement, bmr, time spent sedentary, energy intake, and time spend doing exercise. 
+
+
+
+BMI - BMISC
+```{r}
+bmi.class = cut(dat1.var$bmi, breaks=c(18.5, 30, 65), labels=c("norm","obese")) #categorical
+bmi.num = ifelse(bmi.class=="norm", 0,1) #binary
+
+bmi.macro = glm(bmi.num~protein+carb+fat, family = binomial)
+best.marco = stepAIC(bmi.macro, scope = list(upper = ~protein*carb*fat, lower = ~1))
+summary(best.marco)
+
+#deviance test
+mod12 = glm(bmi.num~protein, family = binomial)
+mod13 = glm(bmi.num~fat, family = binomial)
+mod14 = glm(bmi.num~carb, family = binomial)
+a = anova(mod12, test = "Chisq")
+b = anova(mod13, test = "Chisq")
+c = anova(mod14, test = "Chisq")
+a #protein is significant. So now look for protein and fat and protein and carb. 
+b
+c
+
+mod15 = glm(bmi.num~protein+fat, family = binomial)
+mod16 = glm(bmi.num~protein+carb, family = binomial)
+d = anova(mod15, test = "Chisq")
+e = anova(mod16, test = "Chisq")
+d
+e
+
+pars = coef(best.marco)
+logistic = function(x){1/(1+exp(-x))}
+prop.low = logistic(pars[1])
+prop.med = logistic(pars[1]+pars[2])
+prop.high = logistic(pars[1]+pars[2]+pars[3])
+```
+For BMI as a binary varible we have the best model using stepAIC as:
+$log(p/1-p) =  -1.12 + 0.18*MedProtein + 0.53*HighProtein$
+The estimated proprotion of obese people within the low protein group is 24.6% (since only working with intercept). 
+The estimated proprotion of obese people within the medium protein group is 28.2%. 
+The estimated proprotion of obese people within the high protein group is 40.1%.
+
+Wasit measurement
+```{r}
+#AIC model selection
+waist = dat1.var$waist.cm
+aovwaist = lm(waist~protein+fat+carb)
+bestmod.waist = stepAIC(aovwaist , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.waist)
+
+#deviance test
+mod17 = lm(waist~protein)
+mod18 = lm(waist~fat)
+mod19 = lm(waist~carb)
+a = anova(mod17)
+b = anova(mod18)
+c = anova(mod19)
+a #protein is significant and explains the most of the within factor variation out of the three variables. 
+b
+c 
+
+#protein
+mod20 = lm(waist~protein+fat) 
+mod21 = lm(waist~protein+carb) #signif
+d = anova(mod20)
+e = anova(mod21)
+d
+e
+
+
+mod21 = lm(waist~protein+carb+fat) #not signif
+f = anova(mod21)
+f
+
+mod21 = lm(waist~protein*carb) #not signif
+f = anova(mod21)
+f
+
+#mean waist size - still zero?
+mn.fat = 93.3089
+mn.high.pro = 93.3089 +1.8730
+mn.med.carb = 93.3089 +1.8730 - 0.8955
+```
+In both cases stepAIC and deviance test find that the best model for waist measurements relies on protein and carbs. The best model is:
+$Y_{ijk} = 93.3089 + 1.87*HighProtein - 0.90*MedCarb$. 
+Because were are now doing normal regression we are looking at the mean within each group, not the proportion. The largest mean waist size in this model was found to be 95.12cm for people with a high protein diet. 
+
+
+BMR
+```{r}
+bmr = dat1.var$bmr
+aovbmr = lm(bmr~protein+fat+carb)
+bestmod.bmr = stepAIC(lm(bmr~protein*fat*carb) , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.bmr)
+
+#deviance test
+mod17 = lm(bmr~protein)
+mod18 = lm(bmr~fat)
+mod19 = lm(bmr~carb)
+a = anova(mod17)
+b = anova(mod18)
+c = anova(mod19)
+a  
+b
+c
+
+
+```
+In this case we accept the null model. 
+
+Sedentary
+```{r}
+sed = dat1.var$mins.sed
+aovsed = lm(sed~protein+fat+carb)
+bestmod.sed = stepAIC(aovsed , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.sed)
+
+#deviance test
+mod17 = lm(sed~protein)
+mod18 = lm(sed~fat)
+mod19 = lm(sed~carb)
+a = anova(mod17)
+b = anova(mod18)
+c = anova(mod19)
+a  
+b #most signif
+c
+
+#fat
+mod20 = lm(sed~fat+protein) #signif
+mod21 = lm(sed~fat+carb) 
+d = anova(mod20)
+e = anova(mod21)
+d
+e
+
+#fat+protein
+mod20 = lm(sed~fat+protein+carb)
+d = anova(mod20)
+d #signif
+
+#interaction
+mod20 = lm(sed~fat*protein*carb)
+d = anova(mod20)
+d 
+```
+Best model is the full additive model.
+
+Sex
+```{R}
+#AIC
+sex = ifelse(dat1.var$sex==1,1,0) #1 = male
+glm.sex = glm(sex~protein+fat+carb, family= binomial)
+bestmod.sex = stepAIC(glm.sex, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.sex)
+
+#deviance test
+#deviance test
+mod17 = lm(sex~protein, family = "binomial")
+mod18 = lm(sex~fat,  family = "binomial")
+mod19 = lm(sex~carb,  family = "binomial")
+a = anova(mod17, test = "Chisq")
+b = anova(mod18, test = "Chisq")
+c = anova(mod19, test = "Chisq")
+a 
+b #signif: explains more within SS variation
+c  #signif
+
+#fat
+mod20 = glm(sex~fat+protein, family = "binomial") #not signif
+mod21 = glm(sex~fat+carb, family = "binomial") #signif
+d = anova(mod20, test = "Chisq")
+e = anova(mod21, test = "Chisq")
+d
+e
+
+#fat+carb
+mod22 = glm(sex~fat+carb+protein, family = "binomial") #signif
+f = anova(mod22, test = "Chisq") 
+f
+
+logistic = function(x){1/(1+exp(-x))}
+p.add = logistic(0.46 - 0.48- 0.31 - 0.68- 0.27 - 0.72 + 0.54) #probabiliy of being male and being on this diet is 19%
+p.add
+```
+The suboptimal model is : sex~protein+fat+carb+protein:fat when using a significanc level of 0.05. This has the lowest AIC out of all one step models beginning with the full additive model. Our model becomes:
+$log(p/(1-p)) = 0.46 - 0.48*HighProtein - 0.31*MedFat - 0.68*HighFat- 0.27*MedCarb - 0.72*HighCarb + 0.54*HighProtein:HighFat$
+This tells us that:
+- Less high protein diets 
+
+SES
+```{r}
+dataSteph$SF2SA1QN = as.numeric(as.factor(dataSteph$SF2SA1QN))
+ses = ifelse(dataSteph$SF2SA1QN>4,1,0) #decile [1:4] = 0
+glmadd.ses = glm(ses~protein+fat+carb, family= binomial)
+bestmod.ses = stepAIC(glmadd.ses, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.ses)
+
+mod23 = lm(ses~protein, family = "binomial")
+mod24 = lm(ses~fat,  family = "binomial")
+mod25 = lm(ses~carb,  family = "binomial") 
+a = anova(mod23, test = "Chisq")
+b = anova(mod24, test = "Chisq")
+c = anova(mod25, test = "Chisq")
+a 
+b 
+c #signif
+
+#carbs
+mod20 = glm(sex~carb+protein, family = "binomial") #signif
+mod21 = glm(sex~carb+fat, family = "binomial") #signif
+d = anova(mod20, test = "Chisq")
+e = anova(mod21, test = "Chisq")
+d
+e
+
+#fat+carb
+mod22 = glm(sex~fat+carb+protein, family = "binomial") #signif
+f = anova(mod22, test = "Chisq") 
+f
+```
+Beginning with the full additive model out best model according to one step AIC with a significance level of 0.05 is ses ~ protein + fat + carb + protein:fat. Summary statistics give the model as:
+$Y_{ijk} =  -1.19 - 0.21*MedCarb - 0.54*HighCarb$
+This indicates that if you are in a lo
+
+ENERGY (BMR) - EIBMR1
+```{r}
+bmr = dataSteph$EIBMR1
+aovadd.bmr = lm(bmr~protein+fat+carb)
+bestmod.bmr = stepAIC(aovadd.bmr , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.bmr)
+```
+Best model is given by 
+$Y_{ijk} = 1.37-0.20*MedProtein -0.47*HighProtein+ 0.16*MedFat+ 0.21HighFat -0.15*MedCarb -0.26*HighCarb+ 0.07MedProtein:MedCarb+ 0.12*HighProtein:MedCarb$
+
+
+
+Exercise - ADTOTSE
+```{r}
+sedent = dataSteph$ADTOTSE
+aovadd.sed = lm(sedent~protein+fat+carb)
+bestmod.sed = stepAIC(aovadd.sed, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.sed)
+```
+Best model is the full additive model with significance of 0.05. We get the model
+$Y_{ijk} = 2362.68 -91.42*MedProtein -200.97*HighProtein+ 100.89MedFat +  123.35HighFat -75.94*MedCarb$
+
+Age - using ANOVA since age is not a factor but a numercial variable. 
+```{r}
+#anova - check if model good or not
+#lm - estimate coefficients use summary(lm()) for model
+age = dataSteph$AGEC
+aovadd.age = lm(age~protein+fat+carb)
+bestmod.age = stepAIC(aovadd.age, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.age)
+```
+
+
+
+
+
+
+
+
+
+
+
