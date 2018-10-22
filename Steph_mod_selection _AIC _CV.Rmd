@@ -4,6 +4,15 @@ In this section the aim was to determine the effectiveness of the three macro- n
 
 BMI - BMISC
 ```{r}
+setwd("C:/Users/luodo/Documents/GitHub/STAT3014-Major-Project")
+proj_dat = read.csv("cleanedData.csv", row.names = 1)
+dataSteph = proj_dat[which(proj_dat$AGEC >= 18),]
+carb = cut(dataSteph$CHOPER1, breaks = c(-1, 45, 65, 100), labels = c("low", "med", "high"))
+protein = cut(dataSteph$PROPER1, breaks = c(-1, 15, 25, 100), labels = c("low", "med", "high"))
+fat = cut(dataSteph$FATPER1, breaks = c(-1, 20, 35, 100), labels = c("low", "med", "high"))
+dat1.var = dataSteph[, c(1, 2, 8, 11, 12, 14, 77, 86, 64, 65, 68)]
+names(dat1.var) = c("bmi", "age", "mins.phys", "waist.cm", "bmr", "ses", "mins.sed", "sex", "protein", "fat", "carbs")
+
 bmi = dat1.var$bmi
 aovadd.bmi = lm(bmi~protein+fat+carb)
 bestmod.bmi = stepAIC(aovadd.bmi , scope = list(upper = ~protein*fat*carb, lower = ~1))
