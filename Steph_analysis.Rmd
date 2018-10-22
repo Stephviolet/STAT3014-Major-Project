@@ -1,5 +1,6 @@
 ```{R} 
-proj_dat = read.csv("C:/Users/JPRS1/Desktop/Datasets/cleanedData.csv")
+setwd("C:/Users/luodo/Documents/GitHub/STAT3014-Major-Project")
+proj_dat = read.csv("cleanedData.csv",row.names=1)
 dataSteph = proj_dat[which(proj_dat$AGEC >= 18), ]
 ```
 
@@ -20,6 +21,7 @@ names(dat1.var) = c("bmi", "age", "mins.phys", "waist.cm", "bmr", "ses", "mins.s
 bmi.class = cut(dat1.var$bmi, breaks=c(18.5, 30, 65), labels=c("norm","obese")) #categorical
 bmi.num = ifelse(bmi.class=="norm", 0,1) #binary
 bmi1 = dat1.var$bmi #numeric
+# lot's of NA's
 X = data.matrix(dat1.var[2:8])
 
 #obese as binary for variables
