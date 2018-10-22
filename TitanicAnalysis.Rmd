@@ -1,0 +1,669 @@
+---
+title: "Case study"
+author: "John Ormerod"
+output:
+  html_document: null
+  pdf_document: default
+  toc: yes
+---
+
+Set the seed to 1 (for reproducible results) and clear the memory.
+```{r,echo=TRUE}
+set.seed(1)
+rm(list=ls())
+```
+
+In this case study we will be using the titanic dataset
+```{r,echo=TRUE}
+# Load `titanic.Rdata' data 
+load("titanic.Rdata")
+library(class)
+library(rpart)
+```
+
+The initial dataset has $n=891$ samples and $p=12$ variables.
+
+The variables in the dataset are:
+
+* PassengerId -- Passenger ID
+* Survived -- Passenger Survival Indicator (Binary categorical)
+* Pclass -- Passenger Class (Ordinal categorical)
+* Name -- Name (Character strings)
+* Sex -- Sex (Binary categorical: "male"   "female")
+* Age -- Age (Positive integer. In years.)
+* SibSp -- Number of Siblings/Spouses Aboard (Positive integer)
+* Parch -- Number of Parents/Children Aboard (Positive integer)
+* Ticket -- Ticket Number
+* Fare -- Passenger Fare (Positive continuous)
+* Cabin -- Cabin (Character strings)
+* Embarked -- Port of Embarkation (Nominal categorical: "C" "Q" or "S)
+
+```{r,echo=TRUE}
+summary(titanic)
+lapply(titanic, class)
+```
+
+After some investigating we see that the variables Age and Cabin contain many missing values. 
+We will focus onSurvived as a class we want to predict, and  Pclass, Sex, Age, SibSp,  Parch, Fare and Embarked as predictors. 
+We will remove sames where Age is missing.
+
+
+Define the initial class vector y and predictors X
+```{r,echo=TRUE}
+y = titanic$Survived
+X = titanic[,c("Pclass","Sex","Age","SibSp","Parch","Fare","Embarked")]
+```
+
+Code the categorical variables as factors.
+```{r,echo=TRUE}
+X$Sex = as.numeric(X$Sex=="male") #sex goes from character to numeric, now coded as 0, 1
+X$Embarked = as.factor(X$Embarked) #embarked goes from character to factor
+```
+
+Idenfity the samples containing missing values.
+```{r,echo=TRUE}
+# This function identifies whether a vector contains any missing values
+any.na = function(x) { return(any(is.na(x))); }
+
+# Identify samples with missing value
+# ``apply'' the function ``any.na'' to the rows of ``X''
+inds1 = which(apply(X,1,any.na))
+```
+
+Some samples have Embarked missing.
+```{r,echo=TRUE}
+inds2 = which(titanic$Embarked=="")
+print(inds2)
+```
+
+Combine the indicies containing missing values.
+```{r,echo=TRUE}
+inds3 = c(inds1,inds2)
+```
+
+
+There are 179 samples containing missing values.
+
+
+Remove samples that contain missing values
+```{r,echo=TRUE}
+# 
+y = y[-inds3]
+X = X[-inds3,]
+dim(X)
+
+n = length(y)
+```
+
+The resulting predictor matrix $X$ has $n=712$ samples and $p=7$ predictors.
+Put the "cleaned" data in a data frame.
+```{r,echo=TRUE}
+dat = data.frame(y,X)
+```
+
+# cvTools code
+
+Load the functions from cvTools into memory.
+```{r,echo=FALSE}
+# First we are going to load the cross-validation function
+cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interleaved")) 
+{
+  n <- round(rep(n, length.out = 1))
+  if (!isTRUE(n > 0)) 
+    stop("'n' must be positive")
+
+  K <- round(rep(K, length.out = 1))
+  if (!isTRUE((K > 1) && K <= n)) 
+    stop("'K' outside allowable range")
+
+  type <- if (K == n) 
+    "leave-one-out"
+  else match.arg(type)
+  if (type == "random") {
+    R <- round(rep(R, length.out = 1))
+    if (!isTRUE(R > 0)) 
+      R <- 1
+    subsets <- replicate(R, sample(n))
+  }
+  else {
+    R <- 1
+    subsets <- as.matrix(seq_len(n))
+  }
+  which <- rep(seq_len(K), length.out = n)
+  if (type == "consecutive") 
+    which <- rep.int(seq_len(K), tabulate(which))
+  folds <- list(n = n, K = K, R = R, subsets = subsets, which = which)
+  class(folds) <- "cvFolds"
+  folds
+}
+```
+
+Try out cvFolds(n=10, K=3)
+```{r,echo=TRUE}
+res = cvFolds(n=10, K=3)
+res
+```
+
+res\$subsets contains a random permulation of the values 1:n = 1:10.
+
+res\$which contains values 1, 2 or 3 (since K=3) identifying which samples belong to which fold.
+
+
+# k-nearest neighbours
+
+ 
+```{r,echo=FALSE}
+# First load the library with the knn function
+#library(class)
+
+# The following function does crossvalidation using
+# X - predictor matrix
+# y - class matrix
+# k - value of k in KNN
+# V - number of CV folds
+# seed - (optional) internally sets the seed.
+cv.knn = function(X,y,k=k,V,seed=NA)
+{
+  # Set the seed
+  if (!is.na(seed)) {
+    set.seed(seed)
+  }
+  
+  # Set n
+  n = length(y)
+  
+  # Split the data up into V folds
+  cvSets <- cvFolds(n, V)
+  
+  # Loop through each fold and calculate the error for that fold
+  test.error.knn <- c()
+  for (i in 1:V) 
+  {
+    # set the indices corresponding to the training and test sets
+    testInds <- cvSets$subsets[which(cvSets$which==i)]
+    trainInds <- (1:n)[-testInds]
+    
+    # Separate y and X into the training and test sets
+    y.test <- y[testInds]
+    X.test <- X[ testInds,]
+    y.train <- y[trainInds]
+    X.train <- X[trainInds,]
+    
+    # Do classification on ith fold
+    results.knn <- knn(train=X.train,test=X.test,cl=y.train,k=k)
+    
+    # Calcuate the test error for this fold
+    test.error.knn[i] <- sum(results.knn!=y.test)
+  }
+  
+  # Calculate the mean error over each fold
+  cv.error = sum(test.error.knn)/n
+  
+  # Return the results
+  return(cv.error)
+}
+```
+
+
+Set the range of values for K which we will use for knn.
+Note that we are only using odd values.
+```{r,echo=TRUE}
+k.values = seq(1,49,by=2)
+```
+
+The knn method does not seem to be handling the categorical variables well.
+Use the model.matrix function to turn things into numerical predictors.
+
+```{r,echo=TRUE}
+X2 = model.matrix(~-1+Pclass+Sex+Age+SibSp+Parch+Fare+Embarked,data=dat)
+```
+
+Perform  10-fold ($V=10$) cross-validation
+```{r,echo=TRUE}
+V = 10
+
+# Loop through all values of k and calculate the cross-validation error
+cv.errors = c()
+for (i in 1:length(k.values)) {
+  cv.errors[i] = cv.knn(X2,as.factor(y),k=k.values[i],V,seed=1)
+}
+plot(k.values,cv.errors,type="l",xlab="value of k",ylab="cross-validation error",cex.lab=1.5,
+    main="CV errors for K-nearest neighbours",cex.main=2,ylim=c(0.26,0.38))
+```
+
+```{r,echo=TRUE}
+k.values[which.min(cv.errors)]
+min(cv.errors)
+```
+
+The value of k corresponding to the smallest cross-validation error 
+is k = 23. The cross-validation error when k = 25 is 29.1 percent.
+
+
+Unfortunately, this is about as much as we can get from knn. It does not
+tell us how important variables are, or what effect they have on the survival.
+However, sometimes it is useful to have as a point of comparison against
+other methods in terms of CV error.
+
+Just for fun lets look at what happens if we do this alot for different permulations
+of the samples.
+```{r,echo=TRUE}
+cv.errors.once = cv.errors
+
+plot(k.values,cv.errors,type="l",xlab="value of k",ylab="cross-validation error",cex.lab=1.5,
+    main="CV errors for K-nearest neighbours",cex.main=2,ylim=c(0.26,0.38))
+
+
+R = 20
+for (r in 1:R) {
+  for (i in 1:length(k.values)) {
+    cv.errors[i] = cv.knn(X2,as.factor(y),k=k.values[i],V)
+  }
+  lines(k.values,cv.errors)
+}
+lines(k.values,cv.errors.once,col="red",lwd=3)
+```
+
+Note that the variability in the CV error indicates that a small value
+of K (around 5) might also be good.
+
+# Linear and Quadratic discriminant analysis
+
+Load the libraries with the LDA/QDA methods.
+```{r,echo=FALSE}
+library(MASS)
+
+# The following function does crossvalidation using
+# X - predictor matrix
+# y - class matrix
+# k - value of k in KNN
+# V - number of CV folds
+# seed - (optional) internally sets the seed.
+cv.da = function(X,y,method=c("lda","qda"),V,seed=NA)
+{
+  # Set the seed
+  if (!is.na(seed)) {
+    set.seed(seed)
+  }
+  
+  # Set n
+  n = length(y)
+  
+  # Split the data up into V folds
+  cvSets <- cvFolds(n, V)
+  
+  # Loop through each fold and calculate the error for that fold
+  test.error.da <- c()
+  for (i in 1:V) 
+  {
+    # set the indices corresponding to the training and test sets
+    testInds <- cvSets$subsets[which(cvSets$which==i)]
+    trainInds <- (1:n)[-testInds]
+    
+    # Separate y and X into the training and test sets
+    y.test <- y[testInds]
+    X.test <- X[ testInds,]
+    y.train <- y[trainInds]
+    X.train <- X[trainInds,]
+    
+    # Do classification on ith fold
+    if (method=="lda") {
+      res <- lda(y~., data=X,subset=trainInds)
+    }
+    if (method=="qda") {
+      res <- qda(y~., data=X,subset=trainInds)
+    }
+    results.da = predict(res, X.test)$class
+    
+    # Calcuate the test error for this fold
+    test.error.da[i] <- sum(results.da!=y.test)
+  }
+  
+  # Calculate the mean error over each fold
+  cv.error = sum(test.error.da)/n
+  
+  # Return the results
+  return(cv.error)
+}
+```
+
+Fit the LDA method. Embarked="Q" is problematic since it is rare (4%).
+So we will drop it here.
+
+```{r,echo=TRUE}
+X3 = model.matrix(~-1+Pclass+Sex+Age+SibSp+Parch+Fare,data=dat)
+X3 = data.frame(X3)
+res <- lda(y~., data=X3,subset=1:n)
+res
+```
+
+
+
+The above output suggests the following interpretations for each of the variables.
+
+* Lower Pclass increases survival probability (since the coefficent -0.805200993 is negative).
+
+* Sex = 1 for males. So females are more likely to survive. 
+
+* Older passengers are less likely to survive.
+
+* Passengers with fewer siblings are more likely to survive.
+
+* Passengers with more parents are more likely to survive.
+
+* Passengers who pay a higher fare are more likely to survive.
+
+We now calculate the cross validation error for LDA.
+```{r,echo=TRUE}
+res.lda = cv.da(X3,y,method="lda",V,seed=1)
+res.lda 
+```
+The CV error for LDA is 21.3 percent which is better than knn.
+
+Next, we fit QDA.
+```{r,echo=TRUE}
+res <- qda(y~., data=X3,subset=1:n)
+res
+```
+
+Intepretation is more diffucult, than for LDA, but the group
+means suggest identical intepretations as for LDA.
+
+```{r,echo=TRUE}
+res.qda = cv.da(X3,y,method="qda",V,seed=1)
+res.qda 
+```
+
+The CV error is for QDA 0.2050562 percent and is slightly lower than LDA.
+
+# CART
+
+Load the CART functions in to R.
+```{r,echo=TRUE}
+library(rpart)
+class(X2)
+
+# Be careful as coding y as a factor here
+# Otherwise R will do a regression tree
+# Rather than a classification tree
+res.rpart <- rpart(as.factor(y) ~ X2, data=dat)
+
+library(rpart.plot)
+rpart.plot(res.rpart,type=1,extra=1, main="CART fit of Titanic data",cex.main=2,cex=1)
+```
+
+The above class as the following interpretation
+
+* For males. If you and younger than 6.5 with less than 2.5 siblings
+you would survive (15 casses), otherwise not. Roughly 77/(352+77) or 17.9 percent of males above 6.5
+survived.
+
+* For females things are more complex. Most (148/(9+148)) or  94 percent of 3rd class females
+survived. For females with 1st and 2nd class survival was 46 percent with passengers who
+paid hight fares had slighly higher chance of survival.
+
+Next we load a function to do cross-validation for rpart.
+```{r,echo=FALSE}
+# The following function does cross-validation using
+# X - predictor matrix
+# y - class matrix
+# V - number of CV folds
+# seed - (optional) internally sets the seed.
+cv.rpart = function(X,y,V,seed=NA)
+{
+  # Set the seed
+  if (!is.na(seed)) {
+    set.seed(seed)
+  }
+  
+  # Set n
+  n = length(y)
+  
+  # Split the data up into V folds
+  cvSets <- cvFolds(n, V)
+  
+  # Loop through each fold and calculate the error for that fold
+  test.error <- c()
+  for (i in 1:V) 
+  {
+    # set the indices corresponding to the training and test sets
+    testInds <- cvSets$subsets[which(cvSets$which==i)]
+    trainInds <- (1:n)[-testInds]
+    
+    X = data.frame(X)
+    
+    # Separate y and X into the training and test sets
+    y.test <- y[testInds]
+    X.test <- X[ testInds,]
+    y.train <- y[trainInds]
+    X.train <- X[trainInds,]
+  
+    # Do classification on ith fold
+    res.rpart <- rpart(as.factor(y.train) ~., data=X.train)
+    res = predict(res.rpart, newdata=X.test, type = "class")
+    
+    # Calcuate the test error for this fold
+    test.error[i] <- sum(res!=y.test)
+  }
+  
+  # Calculate the mean error over each fold
+  cv.error = sum(test.error)/n
+  
+  # Return the results
+  return(cv.error)
+}
+```
+
+Now we cacluae the CV error for rpart.
+```{r,echo=TRUE}
+res.rpart = cv.rpart(X2,y,V,seed=1)
+res.rpart
+```
+The CV error for rpart is 21.3 percent. Currently our best classifier 
+is QDA which has an error rate of roughtly 20.1 percent.
+
+
+
+# Logistic regression
+
+Fit a logistic regression model on most of the data.
+```{r,echo=TRUE}
+X3 = data.frame(X3)
+
+res.glm = glm(y~.,family=binomial,data=X3)
+summary(res.glm)
+```
+
+The full model has the coefficeints for Pclass, Sex, Age and SibSp as statisticlly
+signifficantly different fro zero at the 0.05 level. Te fitted model is
+$$
+\mbox{logit}(p) = 5.38 -1.24 \cdot\mbox{Pclass} - 2.63 \cdot \mbox{Sex} - 0.044 \cdot\mbox{Age}
+-0.37 \cdot \mbox{SibSp} -0.06 \cdot \mbox{Parch} - 0.002\cdot\mbox{Fare}
+$$
+where $p$ is the probability of survival.
+
+The effect of the significant variables on surival are:
+
+* Larger Pclass reduces survival times
+* Males have reduced survival times
+* Larger ages reduce survival times
+* Larger number of siblings reduces survival times.
+
+We will now perform stepwise regression from the null and full models as
+starting points and using AIC and BIC as model selection criteria.
+
+```{r,echo=FALSE,results='hide'}
+null = glm(y~1,data=X3,family=binomial)
+full = glm(y~.,data=X3,family=binomial)
+n = length(y)
+# stepwise from full model using BIC
+res.step.bic.full <- step(full,k=log(n))
+# stepwise from full model using AIC
+res.step.aic.full <- step(full,k=2)
+# stepwise from null model using BIC
+res.step.bic.null <- step(null,scope=list(lower=null,upper=full),k=log(n))
+# stepwise from null model using AIC
+res.step.aic.null <- step(null,scope=list(lower=null,upper=full),k=2)
+```
+
+We now display the results nicely using the package huxtable.
+
+```{r,echo=TRUE}
+library(huxtable)
+ht = huxreg(res.glm, res.step.bic.full,  res.step.aic.full, res.step.bic.null, res.step.aic.null,
+            statistics = c(N = "nobs", "logLik", "AIC"))
+ht
+```
+
+All of the models have the same interpretation.
+
+Load some code for corss validation of glms.
+```{r,echo=FALSE}
+cv.lm = function(X,y,V,seed=NA)
+{
+  # Set the seed
+  if (!is.na(seed)) {
+    set.seed(seed)
+  }
+  
+  # Set n
+  n = length(y)
+  
+  # Split the data up into V folds
+  cvSets <- cvFolds(n, V)
+  
+  # Loop through each fold and calculate the error for that fold
+  test.error <- c()
+  for (i in 1:V) 
+  {
+    # set the indices corresponding to the training and test sets
+    testInds <- cvSets$subsets[which(cvSets$which==i)]
+    trainInds <- (1:n)[-testInds]
+    
+    X = data.frame(X)
+    
+    # Separate y and X into the training and test sets
+    y.test <- y[testInds]
+    X.test <- X[ testInds,]
+    y.train <- y[trainInds]
+    X.train <- X[trainInds,]
+  
+    # Do classification on ith fold
+    res.lm <- lm(y.train ~., data=X.train)
+    res = round(predict(res.lm, newdata=X.test, type="response"))
+    
+    # Calcuate the test error for this fold
+    test.error[i] <- sum(res!=y.test)
+  }
+  
+  # Calculate the mean error over each fold
+  cv.error = sum(test.error)/n
+  
+  # Return the results
+  return(cv.error)
+}
+```
+
+Calculate the CV error for glms.
+```{r,echo=TRUE}
+res.glm.cv = cv.glm(X3,y,V,seed=1)
+res.glm.cv
+```
+The CV error for glms is 19.8 percent. This is currently our best
+classifier.
+
+Calculate the CV error for glms using model selection via backward selection.
+
+```{r,echo=FALSE}
+# The following function does cross-validation using
+# X - predictor matrix
+# y - class matrix
+# V - number of CV folds
+# seed - (optional) internally sets the seed.
+cv.glm.backward = function(X,y,V,seed=NA,pen)
+{
+  # Set the seed
+  if (!is.na(seed)) {
+    set.seed(seed)
+  }
+  
+  # Set n
+  n = length(y)
+  
+  # Split the data up into V folds
+  cvSets <- cvFolds(n, V)
+  
+  # Loop through each fold and calculate the error for that fold
+  test.error <- c()
+  for (i in 1:V) 
+  {
+    # set the indices corresponding to the training and test sets
+    testInds <- cvSets$subsets[which(cvSets$which==i)]
+    trainInds <- (1:n)[-testInds]
+    
+    X = data.frame(X)
+    
+    # Separate y and X into the training and test sets
+    y.test <- y[testInds]
+    X.test <- X[ testInds,]
+    y.train <- y[trainInds]
+    X.train <- X[trainInds,]
+  
+    # Do classification on ith fold
+    full <- glm(y.train ~., data=X.train, family=binomial)
+    res.step <- step(full,k=pen)
+    res = round(predict(res.step, newdata=X.test, type="response"))
+    
+    # Calcuate the test error for this fold
+    test.error[i] <- sum(res!=y.test)
+  }
+  
+  # Calculate the mean error over each fold
+  cv.error = sum(test.error)/n
+  
+  # Return the results
+  return(cv.error)
+}
+```
+
+Calculate the CV error for glms using AIC and BIC
+```{r,echo=FALSE,results='hide'}
+res.glm.cv.back.BIC = cv.glm.backward(X3,y,V,seed=1,pen=log(n))
+res.glm.cv.back.AIC = cv.glm.backward(X3,y,V,seed=1,pen=2)
+```
+
+Calcualte the CV error for glms using backward selection usign AIC and BIC.
+```{r,echo=FALSE}
+res.glm.cv.back.BIC
+res.glm.cv.back.AIC
+```
+
+These both have a CV error of 19.8 percent.
+
+# Summary
+
+A summary of the CV error rates are below.
+```{r,echo=FALSE}
+ht <- hux(
+        Methods = c('KNN', 'LDA', 'QDA', 'rpart', 'glm', 'glm (AIC)', 'glm (BIC)'),
+        Errors = 100*c(min(cv.errors),res.lda,res.qda,res.rpart,res.glm.cv,res.glm.cv.back.AIC,res.glm.cv.back.BIC), 
+        add_colnames = TRUE
+      )
+
+bold(ht)[1,]           <- TRUE
+bottom_border(ht)[1,]  <- 1
+align(ht)[,2]          <- 'right'
+right_padding(ht)      <- 10
+left_padding(ht)       <- 10
+width(ht)              <- 0.35
+
+ht
+```
+
+The effect of different predictors on survival status are relatively
+consistent. In summary:
+
+* Larger Pclass reduces survival times
+* Males have reduced survival times
+* Larger ages reduce survival times
+* Larger number of siblings reduces survival times.
