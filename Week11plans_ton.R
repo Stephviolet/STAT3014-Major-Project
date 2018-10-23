@@ -42,7 +42,7 @@ loglin.dat<-data.frame(y=table.y,
 loglin.dat
 glm.additive<-glm(y~carb+fat+protein,
                 family='poisson',data=loglin.dat)
-d.additive$dev
+glm.additive$dev
 # additive model is for complete independence
 glm.cf<-glm(y~carb+fat+protein+carb:fat,
                 family='poisson',data=loglin.dat)
@@ -76,14 +76,14 @@ anova(glm.cf.cp,test="Chisq")
 
 # test the uniform association case
 glm.u.a<-glm(y~carb+fat+protein+carb:fat+carb:protein+fat:protein,
-                family='poisson',data=loglin.dat)
+                family='poisson', data=loglin.dat)
 glm.u.a$dev
 1-pchisq(glm.cf.cp$dev-glm.u.a$dev,
 glm.cf.cp$df.residual-glm.u.a$df.residual)
 
 # test the saturated model
 glm.sat<-glm(y~carb*fat*protein,
-                family='poisson',data=loglin.dat)
+                family='poisson', data=loglin.dat)
 1-pchisq(glm.u.a$dev-glm.sat$dev,
 glm.u.a$df.residual-glm.sat$df.residual)
 anova(glm.sat,test="Chisq")
