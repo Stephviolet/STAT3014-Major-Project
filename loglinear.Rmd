@@ -213,6 +213,12 @@ kable_styling(latex_options = 'hold_position',
               position = "center")
 ```
 
+The letter C, F, and P in the table represent the variable carbohydrate, fat, and protein respectively. Symbols such as FP indicate we are including the interactin term `fat:protein`, and when we include an interaction term, we must also include the variables used to compute the interaction. Similarly, when we include the three-way interaction term CFP (`carb:fat:protein`), we include all two-way interactions as well as all of the three variables.  
+The deviance test suggest that
+$$
+\hat{\mu}_{ijk}=y_{ijk}
+$$
+we should use the saturated model for estimating the proportions for each diet.
 ## limitations
 Poisson distribution assumption,
 sampling zeroes.
