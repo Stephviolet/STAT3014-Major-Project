@@ -1,5 +1,5 @@
 ---
-title: "loglinear"
+title: "Nutrition Project Report"
 author: "Dong Luo"
 date: "22 October 2018"
 output:
@@ -7,6 +7,17 @@ output:
   html_document:
     df_print: paged
 ---
+# Executive summary
+Obesity affects approximately one third of the Australian populated aged 18 years and over (Australian Bureau of Statistics, 2015), posing major health risks to individuals. Obesity has been demonstrated to be related equally to genetics and environmental factors including diet. A person who is dieting has been defined as one who consumes macronutrient groups in an amount lying outside of the acceptable macronutrient distribution ranges (National Health and Medical Research Council, 2017). Here we are interested in whether consuming a diet outside of normal macro-nutrient ranges may be related to Body Mass Index BMI, and thus obesity, and whether a person’s demographics, for example sex, age, waist size, and socioeconomic status is predictive of a person’s choice of diet.
+To investigate this, we developed three research questions.
+
+1. What are the most common diet types among adults in the sample, categorised by the macro- nutrients fat, proteins and carbohydrates.
+
+2. Investigated whether people on different diets have different characteristics and demographics, for example socio- economic status, age, sex, Basal Metabolic Rate (BMR), and BMI.
+
+3. To see if we could predict obesity measured using BMI based on eight variables, including BMR, energy intake, sex, and time spend sedentary.
+
+Throughout the analysis, we focussed on the macro- nutrients protein, fat and carbohydrates. These were because three common types of diets trends have been identified in past research (_____) which are all combinations of different levels of each protein, fat, and carbohydrates. These diets are the Keto diet (high fat, low carbohydrates, medium protein, 18%), the Atkins diet (high protein, low carbohydrates, medium fat, 7%), and the Dash diet (high carbohydrates, low fat, 1.7%).
 
 ## Data Cleaning
 
@@ -218,7 +229,7 @@ The deviance test suggest that
 $$
 \hat{\mu}_{ijk}=y_{ijk}
 $$
-we should use the saturated model for estimating the proportions for each diet.
+we should use the saturated model for estimating the proportions for each diet.  
 ## limitations
 Poisson distribution assumption,
 sampling zeroes.

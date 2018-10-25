@@ -5,12 +5,12 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
   - \usepackage{dcolumn}
 output:
+  pdf_document:
+    toc: yes
   html_document:
     highlight: tango
     toc: yes
     toc_float: yes
-  pdf_document:
-    toc: yes
 always_allow_html: yes
 ---
 
@@ -65,11 +65,11 @@ model = t(cbind(bmi.mod, bmr.mod, waist.mod, sed.mod, sex.mod, ses.mod, age.mod)
 colnames(model) = c("Deviance", "AIC", "F- test")
 rownames(model) = c("BMI", "BMR", "Waist (cm)", "Mins sedentary", "Sex", "SES", "Age")
 
-mod.table = kable_styling(kable(model, booktabs = TRUE, caption ="Table 1: Best models from model selection"),
+mod.table = kable_styling(kable(model, booktabs = TRUE, caption ="Best models from model selection"),
               latex_options = "hold_position", position = "center")
 ```
 
-```{r}
+```{r echo=FALSE}
 mod.table
 ```
 
@@ -435,11 +435,11 @@ Table 2 presents the key characteristics of each of the three diets investigated
 
 ```{r, echo = F}
 #demographic table
-result.tab = kable_styling(kable(result, booktabs = TRUE, caption ="Table 2: Demographics for 8 key variables"),
+result.tab = kable_styling(kable(result, booktabs = TRUE, caption ="Demographics for 8 key variables"),
               latex_options = "hold_position", position = "center")
 ```
 
-```{r}
+```{r echo=FALSE}
 result.tab
 ```
 
