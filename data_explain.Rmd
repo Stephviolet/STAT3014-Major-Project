@@ -1,0 +1,28 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r, echo = F}
+library("kableExtra")
+row1 = c("Binary", "0 = BMI < 30, 1 = BMI > 30")
+row2 = c("Numeric", "Kilojules burnt per day")
+row3 = c("Numeric", "Waist size in centimeters")
+row4 = c("Numeric", "Minutes spent sitting or lying down")
+row5 = c("Binary", "0 = female, 1 = male")
+row6 = c("Binary", "Socio- economic status where 0 = lower SES, 1 = normal SES")
+row7 = c("Numeric", "Age in years")
+
+main.var = t(cbind(row1, row2, row3, row4, row5, row6, row7))
+row.names(main.var) = c("BMI", "BMR", "Waist", "Sedentary", "Sex", "SES", "Age")
+colnames(main.var) = c("Class", "Description")
+var.tab = kable_styling(kable(main.var, booktabs = TRUE, caption ="Table 0: Description of Variables"),
+              latex_options = "hold_position", position = "center")
+
+```
+
+```{r}
+var.tab
+```
+
+
