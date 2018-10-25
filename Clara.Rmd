@@ -17,7 +17,7 @@ library(knitr)
 library(kableExtra)
 ```
 
-#Data Clean
+
 ```{r echo=FALSE}
 Data <- read.csv("cleanedData.csv")
 adultData<-Data[Data$AGEC>=18,]
@@ -170,27 +170,21 @@ kable_styling(kable(
 ##Comment:
 
 The above output suggests the following interpretations for each of the variables.
+
 * People who have higher BMR are more likely to be obese.
 * Lower EIBMR1(Energy intake) increases obesity probability (since the coefficient -0.434 is negative).
 * Lower ADTOTSE(Total mins spent sitting or lying down) increases obesity probability.
-* Sex = 1 for males. So females are more likely to obese.
+* Sex = 1 for males. So females are more likely to be obese.
 * People on a diet are more likely to be obese compared with people not on a diet
 * People who have high fat or high protein diet type are more likely to be obese
 * People who have high carbon diet type decrease the probability of obesity
 
-
-##CV error
-
 ```{r,echo=FALSE}
 #cross validation error for LDA.
 res.lda = cv.da(X1,y,method="lda",V,seed=1)
-res.lda 
 ```
-Comment:
-The CV error for LDA is 18.232 percent
 
 # CART
-
 ```{r,echo=FALSE}
 library(rpart)
 X2 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
@@ -282,30 +276,35 @@ cv.rpart = function(X,y,V,seed=NA)
 }
 ```
 
-##CV error
 ```{r,echo=FALSE}
 res.rpart = cv.rpart(X2,y,V,seed=1)
-res.rpart
 ```
-Comment:
-The CV error for CART is 17.551 percent
+
 
 # Logistic regression
-
-
 ```{r,echo=FALSE}
 #Fit a logistic regression model on most of the data.
 res.glm = glm(y~.,family=binomial,data=X1)
-summary(res.glm)
+coef.table<-round(coef(res.glm),6)
+coef.table1<-cbind(c('1',paste('$x_',1:8,'$',sep = '')),coef.table)
+colnames(coef.table1)<-c('Variable','Estimated Coefficient')
+kable(coef.table1,escape = FALSE,caption = 'Estimated Coefficients of the Logistic Regression') %>%
+  kable_styling(latex_options='hold_position',
+                position='center')
+#coef.table1
 ```
 ##Comment:
 The full model has the coefficeints for BMR, EIBMR1, ADTOTSE, SEX, BDYMSQ04, CHOPER1 as statisticlly
 signifficantly different from zero at the 0.05 level. The fitted model is
 $$
-\mbox{logit}(p) = -0.1093 + 0.001879 \cdot\mbox{BMR} - 3.423 \cdot \mbox{SEX} - 0.7113 \cdot\mbox{EIBMR1} -0.00005952 \cdot \mbox{ADTOTSE} + 0.3802 \cdot \mbox{BDYMSQ04} - 0.01014 \cdot \mbox{CHOPER1} 
+\begin{split}
+\mbox{logit}(p) = &-17.770903  + 0.001879 x_1 - 0.711322 x_2 - 0.00006 x_3 + 3.422641 x4  \\
+& + 0.380154 x_5 - 0.010135 x_6 + 0.001507 x_7 – 0.000998 x_8 
+\end{split}
 $$
 where $p$ is the probability of obesity.
 
+where $x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8$ represents BMR, EIBMR1, ADTOTSE, SEX, BDYMSQ04, CHOPER1, FATPER1, PROPER1 respectively.
 
 ```{r,echo=FALSE}
 cv.glm = function(X,y,V,seed=NA)
@@ -353,16 +352,12 @@ cv.glm = function(X,y,V,seed=NA)
 }
 ```
 
-###CV error for glms.
 ```{r echo=FALSE}
 res.glm.cv = cv.glm(X1,y,V,seed=1)
-res.glm.cv
 ```
-Comment:
-The CV error for glm is 17.78 percent
 
 #summary
-```{r,echo=FALSE}
+```{r,echo=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 library(huxtable)
 library(kableExtra)
 #Kable
@@ -377,3 +372,4 @@ kable_styling(kable(
   latex_options = 'hold_position',
   position = "center")
 ```
+The CV error for LDA is 18.232 percent. The CV error for CART is 17.551 percent. The CV error for glm is 17.778 percent
