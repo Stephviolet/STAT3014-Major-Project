@@ -362,7 +362,7 @@ Comment:
 The CV error for glm is 17.78 percent
 
 #summary
-```{r,echo=FALSE, warning=F}
+```{r,echo=FALSE}
 library(huxtable)
 library(kableExtra)
 #Kable
