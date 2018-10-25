@@ -20,18 +20,15 @@ library(kableExtra)
 #Data Clean
 ```{r echo=FALSE}
 Data <- read.csv("cleanedData.csv")
-dim(Data)
 adultData<-Data[Data$AGEC>=18,]
 obese<-factor(ifelse(adultData$BMISC>=30,'1','0'))
 Xy =na.omit(cbind(adultData[,c("BDYMSQ04","BMR","SEX","EIBMR1","ADTOTSE","CHOPER1","FATPER1","PROPER1")],obese))
 X<-Xy[,-ncol(Xy)]
 y<-Xy[,ncol(Xy)]
 X$BDYMSQ04=as.numeric(ifelse(X$BDYMSQ04 == 5, '0', '1'))
-summary(X)
 ```
 
 # LDA
-
 ```{r,echo=FALSE}
 # Load the functions from cvTools into memory.
 # First we are going to load the cross-validation function
@@ -151,15 +148,13 @@ cv.da = function(X,y,method=c("lda","qda"),V,seed=NA)
 }
 ```
 
-Fit the LDA method
+
 ```{r,echo=FALSE}
 n = length(y)
 dat = data.frame(y,X)
 X1 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
 X1 = data.frame(X1)
-summary(X1)
 res <- lda(y~., data=X1,subset=1:n)
-res
 ## Kable
 lda.table<-round(coef(res),6)
 rownames(lda.table)<-c('BMR','Energy Intake','Total mins spent sedentary','Sex','Whether currently on a diet','Carbohydrate diet','Fat diet','Protein diet')
@@ -173,19 +168,20 @@ kable_styling(kable(
   position = "center")
 ```
 ##Comment:
+
 The above output suggests the following interpretations for each of the variables.
-* People who have higher BMR are more likely to obese
-* Lower EIBMR1(Energy intake) increases obese probability (since the coefficient -0.434 is negative).
-* Lower ADTOTSE(Total mins spent sitting or lying down) increases obese probability (since the coefficient -4.590553e-05 is negative).
-* Sex = 1 for males. So females are more likely to obese
-* People on a diet are more likely to obese compared with people not on a diet
-* People who have high fat and high protein diet type are more likely to obese
+* People who have higher BMR are more likely to be obese.
+* Lower EIBMR1(Energy intake) increases obesity probability (since the coefficient -0.434 is negative).
+* Lower ADTOTSE(Total mins spent sitting or lying down) increases obesity probability.
+* Sex = 1 for males. So females are more likely to obese.
+* People on a diet are more likely to be obese compared with people not on a diet
+* People who have high fat or high protein diet type are more likely to be obese
 * People who have high carbon diet type decrease the probability of obesity
 
 
 ##CV error
 
-```{r,echo=TRUE}
+```{r,echo=FALSE}
 #cross validation error for LDA.
 res.lda = cv.da(X1,y,method="lda",V,seed=1)
 res.lda 
@@ -202,7 +198,6 @@ X2 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,da
 res.rpart <- rpart(as.factor(y) ~ X2, data=dat)
 
 library(rpart.plot)
-res.rpart
 rpart.plot(res.rpart,type=0,extra=1,main="CART Fit for Obesity ",cex.main=2,cex=1)
 
 #male table
@@ -235,12 +230,13 @@ kable_styling(kable(
 
 * 91.4 percent of people(including male and female) whose BMR are less than 6103 are normal (not obese).
 * 83.3 percent of male whose BMR are between 6103 and 8297 are normal.
-* 68.5 percent of male whose BMR are greater than 8297 are obese
-* 54.2 percent of female whose BMR are between 6103 and 6390 are normal
-* 80.1 percent of female whose BMR are greater than 6390 are obese
+* 68.5 percent of male whose BMR are greater than 8297 are obese.
+* 54.2 percent of female whose BMR are between 6103 and 6390 are normal.
+* 80.1 percent of female whose BMR are greater than 6390 are obese.
 
-cross-validation for rpart.
+
 ```{r,echo=FALSE}
+#cross-validation for rpart.
 cv.rpart = function(X,y,V,seed=NA)
 {
   # Set the seed
@@ -287,7 +283,7 @@ cv.rpart = function(X,y,V,seed=NA)
 ```
 
 ##CV error
-```{r,echo=TRUE}
+```{r,echo=FALSE}
 res.rpart = cv.rpart(X2,y,V,seed=1)
 res.rpart
 ```
@@ -296,8 +292,9 @@ The CV error for CART is 17.551 percent
 
 # Logistic regression
 
-Fit a logistic regression model on most of the data.
-```{r,echo=TRUE}
+
+```{r,echo=FALSE}
+#Fit a logistic regression model on most of the data.
 res.glm = glm(y~.,family=binomial,data=X1)
 summary(res.glm)
 ```
@@ -365,7 +362,7 @@ Comment:
 The CV error for glm is 17.78 percent
 
 #summary
-```{r,echo=FALSE}
+```{r,echo=FALSE, warning=F}
 library(huxtable)
 library(kableExtra)
 #Kable
