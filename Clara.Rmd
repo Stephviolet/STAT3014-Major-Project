@@ -1,22 +1,20 @@
 ---
 title: "Clara"
 author: "Anqi Chi SID:460204008"
-<<<<<<< HEAD
+
 date: "22/10/2018"
-output: pdf_document
-=======
-date: "2018 October"
 output:
   pdf_document: default
   word_document: default
   html_document:
     df_print: paged
->>>>>>> 780a6b9a975525f57598113d0798946254bf476c
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 #library(tidyverse)
+library(knitr)
+library(kableExtra)
 ```
 
 #Data Clean
@@ -24,27 +22,10 @@ knitr::opts_chunk$set(echo = TRUE)
 Data <- read.csv("cleanedData.csv")
 dim(Data)
 adultData<-Data[Data$AGEC>=18,]
-# low.fat_high.carb<-Data$FATPER1<25 & Data$CHOPER1>55
-# high.protein_low.carb<-Data$PROPER1>20 & Data$CHOPER1<45
-# high.fat_low.carb<-Data$FATPER1>30 & Data$CHOPER1<45
-carb.cat<-cut(adultData$CHOPER1,
-              breaks=c(-1,45,65,100),
-              labels=c('low','medium','high'))
-fat.cat<-cut(adultData$FATPER1,
-             breaks=c(-1,20,35,100),
-             labels=c('low','medium','high'))
-protein.cat<-cut(adultData$PROPER1,
-                 breaks=c(-1,15,25,100),
-                 labels=c('low','medium','high'))
-
-#data<-na.omit(data.frame(BMR=DataC$BMR,Sex=sex,Diet=ifDiet,EIBMR=DataC$EIBMR1))
 obese<-factor(ifelse(adultData$BMISC>=30,'1','0'))
 Xy =na.omit(cbind(adultData[,c("BDYMSQ04","BMR","SEX","EIBMR1","ADTOTSE","CHOPER1","FATPER1","PROPER1")],obese))
 X<-Xy[,-ncol(Xy)]
 y<-Xy[,ncol(Xy)]
-#Code the categorical variables as factors.
-X$SEX = as.numeric(X$SEX=="1")
-#sex<-factor(ifelse(DataC$SEX==1,'male','female'))
 X$BDYMSQ04=as.numeric(ifelse(X$BDYMSQ04 == 5, '0', '1'))
 summary(X)
 ```
@@ -88,8 +69,6 @@ cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interlea
 
 ```{r,echo=FALSE}
 library(MASS)
-<<<<<<< HEAD
-=======
 cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interleaved")) 
 {
   n <- round(rep(n, length.out = 1))
@@ -121,7 +100,7 @@ cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interlea
   folds
 }
 # k - value of k in KNN
->>>>>>> 780a6b9a975525f57598113d0798946254bf476c
+# 780a6b9a975525f57598113d0798946254bf476c
 V =10 #number of CV folds
 # seed - (optional) internally sets the seed.
 cv.da = function(X,y,method=c("lda","qda"),V,seed=NA)
@@ -173,7 +152,7 @@ cv.da = function(X,y,method=c("lda","qda"),V,seed=NA)
 ```
 
 Fit the LDA method
-```{r,echo=TRUE}
+```{r,echo=FALSE}
 n = length(y)
 dat = data.frame(y,X)
 X1 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
@@ -181,17 +160,25 @@ X1 = data.frame(X1)
 summary(X1)
 res <- lda(y~., data=X1,subset=1:n)
 res
-
+## Kable
+lda.table<-round(coef(res),6)
+rownames(lda.table)<-c('BMR','Energy Intake','Total mins spent sedentary','Sex','Whether currently on a diet','Carbohydrate diet','Fat diet','Protein diet')
+colnames(lda.table)<-c('Estimated Coefficients')
+kable_styling(kable(
+  lda.table,
+  booktabs=TRUE,
+  caption = "Coefficients of Predictors in LDA"
+  ),
+  latex_options = 'hold_position',
+  position = "center")
 ```
 ##Comment:
 The above output suggests the following interpretations for each of the variables.
 * People who have higher BMR are more likely to obese
 * Lower EIBMR1(Energy intake) increases obese probability (since the coefficient -0.434 is negative).
 * Lower ADTOTSE(Total mins spent sitting or lying down) increases obese probability (since the coefficient -4.590553e-05 is negative).
-
 * Sex = 1 for males. So females are more likely to obese
 * People on a diet are more likely to obese compared with people not on a diet
-
 * People who have high fat and high protein diet type are more likely to obese
 * People who have high carbon diet type decrease the probability of obesity
 
@@ -208,37 +195,49 @@ The CV error for LDA is 18.232 percent
 
 # CART
 
-```{r,echo=TRUE}
+```{r,echo=FALSE}
 library(rpart)
 X2 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
 # Be careful as coding y as a factor here, Otherwise R will do a regression tree rather than a classification tree
 res.rpart <- rpart(as.factor(y) ~ X2, data=dat)
 
 library(rpart.plot)
-rpart.plot(res.rpart,type=0,extra=1,main="CART fit",cex.main=2,cex=1)
+res.rpart
+rpart.plot(res.rpart,type=0,extra=1,main="CART Fit for Obesity ",cex.main=2,cex=1)
+
+#male table
+male.props<-c(' 6.7%',' 68.5%')
+male.df<-t(data.frame(male=male.props))
+colnames(male.df)<-c('6103 < BMR < 8297','BMR > 8297')
+rownames(male.df)<-c('estimated obesity rate')
+kable_styling(kable(
+  male.df,
+  booktabs=TRUE,
+  caption = "Obesity Rate for Male with BMR greater than 6103"
+  ),
+  latex_options = 'hold_position',
+  position = "center")
+
+# female
+female.props<-c('45.8%','80.1%')
+female.df<-t(data.frame(female=female.props))
+colnames(female.df)<-c('6103 < BMR < 6390','BMR > 6390')
+rownames(female.df)<-c('estimated obesity rate')
+kable_styling(kable(
+  female.df,
+  booktabs=TRUE,
+  caption = "Obesity Rate for Female with BMR greater than 6103"
+  ),
+  latex_options = 'hold_position',
+  position = "center")
 ```
 ##Comment:
-<<<<<<< HEAD
-* 91.4 percent of people whose BMR are less than 6103 are normal (not obese).
+
+* 91.4 percent of people(including male and female) whose BMR are less than 6103 are normal (not obese).
 * 83.3 percent of male whose BMR are between 6103 and 8297 are normal.
 * 68.5 percent of male whose BMR are greater than 8297 are obese
 * 54.2 percent of female whose BMR are between 6103 and 6390 are normal
 * 80.1 percent of female whose BMR are greater than 6390 are obese
-
-
-| Obesity | BMR < 6103 | 6103 < BMR < 8297 | BMR > 8297 |
-|---------|----------|---------------|----------|
-| male    | 8.6%     | 6.7%          | 68.5%    |
-
-
-
-| Obesity | BMR < 6103 | 6103 < BMR < 6390 | BMR > 6390 |
-|---------|----------|---------------|----------|
-| female  | 8.6%     | 45.8%         | 80.1%    |
-
-=======
-Interpret
->>>>>>> 780a6b9a975525f57598113d0798946254bf476c
 
 cross-validation for rpart.
 ```{r,echo=FALSE}
@@ -310,11 +309,6 @@ $$
 $$
 where $p$ is the probability of obesity.
 
-The effect of the significant variables on surival are:
-* Larger BMR reduces the probability of obesity.
-* Males have reduced the probability of obesity compared to women.
-
-
 
 ```{r,echo=FALSE}
 cv.glm = function(X,y,V,seed=NA)
@@ -371,34 +365,18 @@ Comment:
 The CV error for glm is 17.78 percent
 
 #summary
-We now display the results nicely using the package huxtable.
-
 ```{r,echo=FALSE}
 library(huxtable)
-<<<<<<< HEAD
-=======
 library(kableExtra)
->>>>>>> 780a6b9a975525f57598113d0798946254bf476c
-ht <- hux(
-        Methods = c( 'LDA', 'rpart', 'glm'),
-        Errors = 100*c(res.lda, res.rpart, res.glm.cv), 
-        add_colnames = TRUE
-      )
-
-bold(ht)[1,]           <- TRUE
-bottom_border(ht)[1,]  <- 1
-align(ht)[,2]          <- 'right'
-right_padding(ht)      <- 10
-left_padding(ht)       <- 10
-width(ht)              <- 0.35
-
-#ht
-Methods = c( 'LDA', 'rpart', 'glm')
-Errors = 100*c(res.lda, res.rpart, res.glm.cv)
-kable(data.frame(Methods,Errors))
-
+#Kable
+Methods = c( 'LDA', 'CART', 'Logistic Regression')
+Errors = round(100*c(res.lda, res.rpart, res.glm.cv),3)
+errors.df<-(data.frame(Methods,Errors))
+kable_styling(kable(
+  errors.df,
+  booktabs=TRUE,
+  caption = "Summary of the CV Errors"
+  ),
+  latex_options = 'hold_position',
+  position = "center")
 ```
-
-The effect of different predictors on obesity are relatively
-consistent. In summary:
-ginger
