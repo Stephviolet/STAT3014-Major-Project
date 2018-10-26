@@ -32,6 +32,19 @@ We identified several limitations in our project. Stated below:
 * Some of the assumptions in model selection using linear regression were not met so log and square root transformations were applied in some cases to the data. This could affect the interpretation of the data.
 * Stepwise tests were used for model selection where the test statistics may not follow the F or chi- squared distributions (Flom, P.L, Cassell, D.L, 2007)
 * An automated stepwise AIC was used in model selection. Although it was used in conjunction with deviance tests and the F test, there is some criticism that the AIC only selects a locally optimal model (Thayer, J.D, 1990).
+=======
+
+* This project only focussed on 11 out of the available 144 variables provided in the dataset. Had we had more time, these other variables could have been further investigated to make more accurate or interesting findings.
+
+* The continuous variables BMI and socio- economic status (SES) were manually split into two groups (normal/ overweight and obese, and low SES and normal SES). This could result a loss of information, or less accurate interpretation of the data.
+
+* Some of the assumptions in model selection using linear regression were not met so log and square root transformations were applied in some cases to the data. This could affect the interpretation of the data.
+
+* Stepwise tests were used for model selection where the test statistics may not follow the F or chi- squared distributions (Flom, P.L, Cassell, D.L, 2007)
+
+* An automated stepwise AIC was used in model selection. Although it was used in conjunction with deviance tests and the F test, there is some criticism that the AIC only selects a locally optimal model (Thayer, J.D, 1990).
+
+>>>>>>> parent of 0cfe475... modified the encoding for sex
 * The three macro- nutrients being looked at are comprised of specific subcategories, for example fat is made up of different types of fats including trans- fats (which are bad for you) or polysaturated fats (which are good for you) and these have not been investigated here, but the breakdown into subcategories may lead to further explanation of results.
 only gave point estim
 
@@ -58,6 +71,7 @@ row12 = c("Numeric", "Percentage of energy from fat")
 main.var = t(cbind(row1, row2, row3, row4, row5, row6, row7, row8, row9, row10, row11, row12))
 row.names(main.var) = c("BMI", "BMR", "Waist", "Sedentary", "Sex", "SES", "Age", "Energy intake", "Diet status", "Carbohydrates", "Protein", "Fat")
 colnames(main.var) = c("Class", "Description")
+var.tab = kable_styling(kable(main.var, booktabs = TRUE, caption ="\\label{vartab}Description of Variables"),latex_options = "hold_position", position = "center")
 ```
 
 ```{r echo=FALSE}
@@ -117,6 +131,7 @@ We divided the data this way because we were interested in the mean proportion o
 <<<<<<< HEAD
 # Research Question 3
 =======
+## Research Question 1
 >>>>>>> parent of 0cfe475... modified the encoding for sex
 
 ```{r echo=FALSE}
@@ -292,6 +307,7 @@ Therefore, the proportion for each diet can be estimated by the sample proportio
 <<<<<<< HEAD
 # Research Question 2
 =======
+## Research Question 2
 >>>>>>> parent of 0cfe475... modified the encoding for sex
 
 ```{r setup, include=FALSE}
@@ -636,6 +652,7 @@ $$
 <<<<<<< HEAD
 # Research Question 3
 =======
+## Research Question 3
 >>>>>>> parent of 0cfe475... modified the encoding for sex
 ```{R, echo = F, include = F, message = F, warning = F}
 #setwd("C:/Users/JPRS1/Desktop/STAT3014/Major_project/STAT3014-Major-Project")
