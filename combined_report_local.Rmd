@@ -30,6 +30,35 @@ To investigate this, we developed three research questions.
 
 Throughout the analysis, we focussed on the macro- nutrients protein, fat and carbohydrates. These were because three common types of diets trends have been identified (Kossoff, Turner, Doerrer, Cervenka, Henry, 2016) which are all combinations of different levels of each protein, fat, and carbohydrates. These diets are the Keto diet (high fat, low carbohydrates, medium protein, which made up of 18% of our sample), the Atkins diet (high protein, low carbohydrates, medium fat, 7% of our sample), and the Dash diet (high carbohydrates, low fat, 1.7% of our sample).
 
+<<<<<<< HEAD
+=======
+## Limitations
+
+We identified several limitations in our project. Stated below:
+<<<<<<< HEAD
+* This project only focussed on 11 out of the available 144 variables provided in the dataset. Had we had more time, these other variables could have been further investigated to make more accurate or interesting findings.
+* The continuous variables BMI and socio- economic status (SES) were manually split into two groups (normal/ overweight and obese, and low SES and normal SES). This could result a loss of information, or less accurate interpretation of the data.
+* Some of the assumptions in model selection using linear regression were not met so log and square root transformations were applied in some cases to the data. This could affect the interpretation of the data.
+* Stepwise tests were used for model selection where the test statistics may not follow the F or chi- squared distributions (Flom, P.L, Cassell, D.L, 2007)
+* An automated stepwise AIC was used in model selection. Although it was used in conjunction with deviance tests and the F test, there is some criticism that the AIC only selects a locally optimal model (Thayer, J.D, 1990).
+=======
+
+* This project only focussed on 11 out of the available 144 variables provided in the dataset. Had we had more time, these other variables could have been further investigated to make more accurate or interesting findings.
+
+* The continuous variables BMI and socio- economic status (SES) were manually split into two groups (normal/ overweight and obese, and low SES and normal SES). This could result a loss of information, or less accurate interpretation of the data.
+
+* Some of the assumptions in model selection using linear regression were not met so log and square root transformations were applied in some cases to the data. This could affect the interpretation of the data.
+
+* Stepwise tests were used for model selection where the test statistics may not follow the F or chi- squared distributions (Flom, P.L, Cassell, D.L, 2007)
+
+* An automated stepwise AIC was used in model selection. Although it was used in conjunction with deviance tests and the F test, there is some criticism that the AIC only selects a locally optimal model (Thayer, J.D, 1990).
+
+>>>>>>> parent of 0cfe475... modified the encoding for sex
+* The three macro- nutrients being looked at are comprised of specific subcategories, for example fat is made up of different types of fats including trans- fats (which are bad for you) or polysaturated fats (which are good for you) and these have not been investigated here, but the breakdown into subcategories may lead to further explanation of results.
+only gave point estim
+
+
+>>>>>>> bc222029c5b6b4d407488fa042c47b6f5c719cc9
 # Methodologies
 
 ## Data Cleaning
@@ -52,7 +81,7 @@ row12 = c("Numeric", "Percentage of energy from fat")
 main.var = t(cbind(row1, row2, row3, row4, row5, row6, row7, row8, row9, row10, row11, row12))
 row.names(main.var) = c("BMI", "BMR", "Waist", "Sedentary", "Sex", "SES", "Age", "Energy intake", "Diet status", "Carbohydrates", "Protein", "Fat")
 colnames(main.var) = c("Class", "Description")
-var.tab = kable_styling(kable(main.var, booktabs = TRUE, caption ="\\label{vartab}Description of Variables")%>% column_spec(1, bold = T, color = "black"),latex_options = "hold_position", position = "center")
+var.tab = kable_styling(kable(main.var, booktabs = TRUE, caption ="\\label{vartab}Description of Variables"),latex_options = "hold_position", position = "center")
 ```
 
 ```{r echo=FALSE}
@@ -107,7 +136,15 @@ protein.cat<-cut(adultData$PROPER1,
 
 We divided the data this way because we were interested in the mean proportion of each diet, so that we could identify the most popular diets within our sample.
 
+<<<<<<< HEAD
 ## Research Question 1 : Popular Diet Types 
+=======
+<<<<<<< HEAD
+# Research Question 3
+=======
+## Research Question 1
+>>>>>>> parent of 0cfe475... modified the encoding for sex
+>>>>>>> bc222029c5b6b4d407488fa042c47b6f5c719cc9
 
 ```{r echo=FALSE}
 tables.3way<-table(carb.cat,fat.cat,protein.cat)
@@ -280,7 +317,15 @@ $$
 $$
 Therefore, the proportion for each diet can be estimated by the sample proportions.
 
+<<<<<<< HEAD
 ## Research Question 2 : Predicting Obesity
+=======
+<<<<<<< HEAD
+# Research Question 2
+=======
+## Research Question 2
+>>>>>>> parent of 0cfe475... modified the encoding for sex
+>>>>>>> bc222029c5b6b4d407488fa042c47b6f5c719cc9
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -639,9 +684,17 @@ kable_styling(kable(
   position = "center")
 ```
 
+<<<<<<< HEAD
 Finally, we compare these three methods by computing repeated 10-fold cross-validation errors. Table \ref{errors_summary} shows that the CV error for CART is 17.551 percent which is better than LDA and Logistic Regression. The effect of different methods on obesity are relatively consistent.
 
 ## Research Question 3 : Comparing Demographics Between Diets
+=======
+<<<<<<< HEAD
+# Research Question 3
+=======
+## Research Question 3
+>>>>>>> parent of 0cfe475... modified the encoding for sex
+>>>>>>> bc222029c5b6b4d407488fa042c47b6f5c719cc9
 ```{R, echo = F, include = F, message = F, warning = F}
 #setwd("C:/Users/JPRS1/Desktop/STAT3014/Major_project/STAT3014-Major-Project")
 proj_dat = read.csv("cleanedData.csv",row.names=1)
@@ -1040,6 +1093,7 @@ result.tab
 * Sex: Within our dataset 46% of subjects were male yet we found that the probability of being male on a high carbohyrate, medium fat, and medium protein diet was 60%.   
 
 * SES: Despite having a lower proportion of normal SES participants in the study, there was a high proportion who had a high carbohyrate diet but normal fat and protein. This is a surprising result as much literature supports low SES rather than normal and high SES having high carb diets since carbohyrates are cheaper than protein, and might be consumed ecessively in order to to meet dietary protein needs (Brooks, Simpson & Raubenheimer, 2010). However some literature comments on the inconsistenices of results related to protein intake in the context of lower SES  (Darmon,N., Drewnowski,A.,2008).  
+<<<<<<< HEAD
  
 ## Limitations
 
@@ -1062,12 +1116,29 @@ We identified several limitations in our project. Stated below:
 * We only provided point estimation of the fitted proportions in logistic regression  rather than a confidence interval. 
 
 
+=======
+<<<<<<< HEAD
+=======
+ 
+>>>>>>> parent of 0cfe475... modified the encoding for sex
+
+
+# Conclusion
+
+<<<<<<< HEAD
+=======
+
+# limitations
+Poisson distribution assumption,
+sampling zeroes.
+>>>>>>> parent of 0cfe475... modified the encoding for sex
+>>>>>>> bc222029c5b6b4d407488fa042c47b6f5c719cc9
 
 ---
 nocite: |
   @item1, @item2, @item3, @item4, @item5, @item6
 ...
-
+  
 # References
 
 ```{r generateBibliography, message=FALSE, warning=FALSE, include=FALSE}
