@@ -3,7 +3,9 @@ title: "Nutrition Project Report"
 author: "Dong Luo"
 date: "22 October 2018"
 output:
-  pdf_document: default
+  pdf_document: 
+    number_sections: yes
+    toc: yes
   html_document:
     df_print: paged
 ---
@@ -19,12 +21,15 @@ To investigate this, we developed three research questions.
 
 Throughout the analysis, we focussed on the macro- nutrients protein, fat and carbohydrates. These were because three common types of diets trends have been identified (Kossoff, Turner, Doerrer, Cervenka, Henry, 2016) which are all combinations of different levels of each protein, fat, and carbohydrates. These diets are the Keto diet (high fat, low carbohydrates, medium protein, which made up of 18% of our sample), the Atkins diet (high protein, low carbohydrates, medium fat, 7% of our sample), and the Dash diet (high carbohydrates, low fat, 1.7% of our sample).
 
-## Data Cleaning
+# Methodologies
+
+## Proportion of the diets
 
 We excluded the observations where age was less than 18. This was because our research questions focussed on obesity which we determined using the BMI. However BMI does not apply to children, so including under 18s may lead to misleading esults. 
 
 ```{r import_data, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
 library(kableExtra)
 #setwd("~/GitHub/STAT3014-Major-Project")
 #library(ggplot2)
@@ -33,9 +38,8 @@ Data <- read.csv("C:/Users/luodo/Documents/GitHub/STAT3014-Major-Project/cleaned
 adultData<-Data[Data$AGEC>=18,]
 ```
 
-##  
 
-We cut each of the continuous variables `CHOPER1`, `FATPER1`, and `PROPER1`, which are the percentages of total energy coming from carbohydrates, fat,and protein into three distinct levels,low, medium, and high. Below is table of percentages of total energy used to divide the groups. 
+We cut each of the continuous variables `CHOPER1`, `FATPER1`, and `PROPER1`, which are the percentages of total energy coming from carbohydrates, fat,and protein into three distinct levels,low, medium, and high. Table \ref{div} shows the percentages of total energy used to divide the groups. 
 
 ```{r, echo = F}
 r1 = c("[0,45]", "[0,20]", "[0,15]")
@@ -47,11 +51,11 @@ row.names(pert) = c("Low (%)", "Medium (%)", "High (%)")
 colnames(pert) = c("Carbohydrates", "Fat", "Protein")
 
 #percentage table
-pert.tab = kable_styling(kable(pert, booktabs = TRUE, caption ="Table 1: Division of Macro- nutrients by Total Energy  Percentage") %>% column_spec(1, bold = T, color = "black"), latex_options = "hold_position", position = "center")
+pert.tab = kable_styling(kable(pert, booktabs = TRUE, caption ="\\label{div}Division of Macro- nutrients by Total Energy  Percentage") %>% column_spec(1, bold = T, color = "black"), latex_options = "hold_position", position = "center")
               
 ```
 
-```{r, include=F}
+```{r echo=FALSE}
 pert.tab
 ```
 
@@ -101,16 +105,19 @@ kable_styling(kable(
   position = "center")
 ```
 
-We fitted log-linear models to see if there was any independence underlying the three-way contingency table.  
+We fitted log-linear models to see if there was any independence underlying the three-way contingency table.
 
 ### Structural Zeroes
-Noticing that there were some cells with value zero in our table. We treated the zeroes as structural zeroes (impossible combinations) since the variables `CHOPER1` (carbohydrate), `FATPER1` (fat), and `PROPER1` (protein) in the original dataset stand for the proportions. This means some of the diets listed in the table, such as high carbohydrate, high fat,high protein were not possible as the sum of the three proportions would exceed 100. We removed the cells of structural zeroes from the and model the incomplete table.
+
+We noticed that there were some cells with value zero in our table. We treated the zeroes as structural zeroes (impossible combinations) since the variables `CHOPER1` (carbohydrate), `FATPER1` (fat), and `PROPER1` (protein) in the original dataset stand for the proportions. This means some of the diets listed in the table, such as high carbohydrate, high fat,high protein were not possible as the sum of the three proportions would exceed 100. We removed the cells of structural zeroes from the and model the incomplete table.
 
 ```{r removing_zeroes, echo=FALSE}
 loglin.dat<-loglin.dat[loglin.dat$y>0,]
 ```
 
-There were 20 out of 27 cells with positive entries. The null model will have $20-1=19$ degrees of freedom and the additive model will have 13 degrees of freedom.
+### Log-Linear Models 
+
+There were 20 out of 27 cells with positive entries. The null model will have $20-1=19$ degrees of freedom and the additive model will have 13 degrees of freedom.  
 We started with the additvie model, which stands for the complete independence.
 
 ```{r additive, echo=FALSE, warning=FALSE}
@@ -119,7 +126,7 @@ glm.additive<-glm(y~carb+fat+protein,
 #glm.additive$dev
 ```
 
-We found the deviance for the additive model (including all three factors) was `r glm.additive$dev`. We compared it with the models with one two way interaction. There were three such models, and their residual deviance is shown as below.
+We found the deviance for the additive model (including all three factors) was `r glm.additive$dev`. We compared it with the models with one two way interaction. There were three such models, and their residual deviance is shown as in Table \ref{dev1}.
 
 ```{r echo=FALSE}
 # additive model is for complete independence
@@ -130,14 +137,14 @@ glm.cp<-glm(y~carb+fat+protein+carb:protein,
 glm.fp<-glm(y~carb+fat+protein+fat:protein,
           family='poisson',data=loglin.dat)
 #c(glm.cf$dev,glm.cp$dev,glm.fp$dev)
-dev1.table<-data.frame('Carb:Fat'=glm.cf$dev,
-           'Carb:Protein'=glm.cp$dev,
-           'Fat:Protein'=glm.fp$dev)
+dev1.table<-data.frame('CF'=glm.cf$dev,
+           'CP'=glm.cp$dev,
+           'FP'=glm.fp$dev)
 rownames(dev1.table)<-c('Residual Deviance')
 kable_styling(kable(
   dev1.table,
-  row.names = F,
   format='latex',
+  caption = '\\label{dev1}Deviances of models with one interaction term',
   booktabs=TRUE),position = "center")
 ```
 
@@ -148,15 +155,15 @@ $$
 \hat{\mu}=\beta_0+\alpha_i+\beta_j+\gamma_k,
 $$
 
-where $\alpha_i$, $\beta_j$, and $\gamma_k$ denote the $i^{th},j^{th}$ and $k^{th}$ group of carbohydrate, fat, and protein levels
+where $\alpha_i$, $\beta_j$, and $\gamma_k$ denote the $i^{th},j^{th}$ and $k^{th}$ group of carbohydrate, fat, and protein levels. The alternative hypothesis is
 $$
 \text{M2}\,(H_A): \hat{\mu}=\beta_0+\alpha_i+\beta_j+\gamma_k+(\alpha\beta)_{ij}
 $$
-Under $H_0$, the difference in deviance followed a $\chi^2$ distribution whose degrees of freedom equals the difference in residual degrees of freedom of the two models. 
-If our table was complete, we would expect the difference in degrees of freedom to be $(3-1)\times(3-1)=4$, since each factor has 3 levels.   
-Here the difference in degrees of freedom is . This is because there was a structural zero in the marginal table of carbohydrate and fat (we cannot have high carbohydrate and high fat at the same time), so we were only adding three parameters when fitting the model. A coefficient of an interaction level in the `glm` function output will be `NA`.   
-The $p$-value for the test is close to 0, so we would reject the null hypothesis and prefer the model with `carb:fat` interaction. This model with one interaction term stands for the block independence.   
-We use the same procedure to test the models with more interaction terms, and the result of the test is summarised in the following table.
+Under $H_0$, the difference in deviance followed a $\chi^2$ distribution whose degrees of freedom equals the difference in residual degrees of freedom of the two models.   
+If our table was complete, we would expect the difference in degrees of freedom to be $(3-1)\times(3-1)=4$, since each factor has 3 levels.     
+Here the difference in degrees of freedom is 3. This is because there was a structural zero in the marginal table of carbohydrate and fat (we cannot have high carbohydrate and high fat at the same time), so we were only adding three parameters when fitting the model. A coefficient of an interaction level in the `glm` function output will be `NA`.   
+The $p$-value for the test is close to 0, so we would reject the null hypothesis and prefer the model with `carb:fat` interaction. This model with one interaction term stands for the block independence.      
+We use the same procedure to test the models with more interaction terms, and the result of the test is summarised in Table \ref{dev2}.   
 ```{r more_interactions, message=FALSE, warning=FALSE, include=FALSE}
 # reject the additive model(complete independence)
 glm.cf.cp<-glm(y~carb+fat+protein+carb:fat+carb:protein,
@@ -222,7 +229,7 @@ collapse_rows_dt <- data.frame(Type = c('Completely Independence Model',
 #                  C4 = sample(c(0,1), 15, replace = TRUE))
 collapse_rows_dt %>%
 kable("latex", booktabs = T, escape = F,
-caption = "Deviances for Poisson log-linear models") %>%
+caption = "\\label{dev2}Deviances for Poisson log-linear models") %>%
 kable_styling(full_width = F) %>%
 column_spec(1, bold = T) %>%
 collapse_rows(columns = 1, valign = "middle") %>%
@@ -230,11 +237,11 @@ kable_styling(latex_options = 'hold_position',
               position = "center")
 ```
 The letters C, F, and P in the table represent the variables carbohydrate, fat, and protein respectively. Symbols such as FP indicate we are including the interactin term `fat:protein`, and when we include an interaction term we must also include the variables used to compute the interaction. Similarly, when we include the three-way interaction term CFP (`carb:fat:protein`), we include all two-way interactions as well as all of the three variables.  
-The deviance test suggests that
+The deviance test suggests that we shall choose the saturated model, which implies 
 $$
-\hat{\mu}_{ijk}=y_{ijk}
+\hat{\mu}_{ijk}=y_{ijk}.
 $$
-we used the saturated model for estimating the proportions for each diet.  
+Therefore, the proportion for each diet can be estimated by the sample proportions.  
 
 ```{R, echo = F, include = F, message = F, warning = F}
 #setwd("C:/Users/JPRS1/Desktop/STAT3014/Major_project/STAT3014-Major-Project")
@@ -250,8 +257,8 @@ names(dat1.var) = c("bmi", "age", "mins.phys", "waist.cm", "bmr", "ses", "mins.s
 library("kableExtra")
 ```
 
-#### Predicting Demographics by Diet Type
-This section worked out the best diets to model different dependent variables; BMI, BMR, waist size (cm), mintues spent sedentary, sex, SES, and age. The focus of this area was to predict eight key demographics using protein, fat, and carbohydrate diets. Each of the variables was chosen through discussion with NUTM3001 students, and were modelled using linear regression for numerical variables and logistic regression for binary variables. 
+## Comparing Demographics by Diet Type
+This section worked out the best diets to model different dependent variables; BMI, BMR, waist size (cm), mintues spent sedentary, sex, SES, and age. The focus of this area was to fit eight key demographics using protein, fat, and carbohydrate diets. Each of the variables was chosen through discussion with NUTM3001 students, and were modelled using linear regression for numerical variables and logistic regression for binary variables. 
 
 Prior to beginning model selection, assumptions for normality of errors and homogeneity of variance were assessed using Q-Q plots and box plots of residuals, and a residual versus fitted plot was used visually assess homogeneity of variance and independence. An example of the graphs used has been provided in Figure 1 showing the diagnostic plots for the dependent variable BMR, excluding the boxplot of residuals. For variables BMR and sedentary the normality assumption was not met. We decided to apply a log transformation to BMR and a square root transformation to minutes sedentary to satisfy normality. 
 
@@ -261,7 +268,7 @@ bmr.omit = as.data.frame(na.omit(cbind(bmr, protein, fat, carb)))
 aovbmr = lm(log(bmr)~protein+fat+carb, data = bmr.omit)
 ```
 
-```{r echo=FALSE, fig.cap='Figure 1: Model Diagnostics',fig.height=2,fig.pos="H",fig.show='hold',fig.fullwidth=TRUE}
+```{r echo=FALSE, fig.cap='Model Diagnostics',fig.height=2,fig.pos="H",fig.show='hold',fig.fullwidth=TRUE}
 par(mfrow=c(1,3))
 #boxplot(aovbmr$residuals, main = "log(BMR) residuals", ylab = "log(BMR)") 
 plot(aovbmr, which=1:3, add.smooth=FALSE)
@@ -269,10 +276,9 @@ plot(aovbmr, which=1:3, add.smooth=FALSE)
 par(mfrow=c(1,1))
 ```
 
-Once the the assumptions were met, we began model selection. We used residual deviance tests and AIC Stepwise model selection to find the "best" model for continuous dependent variables and the F test and AIC Stepwise model selection for binary dependent variables. For five of the dependent variables the "best" model was found to be the same using AIC and the residual deviance or F test. For BMR, SES, and minutes spent sedentary the models did not match. When the models did not match, the model selected by the F test was used as the "best" model because the AIC has been claimed to typically prefer overly complex models. 
-
-For each dependent variable using the F or deviance tests, we tested the null hypothesis that the variable was best modelled by the null model (intercept only) compared to the alternative hypothesis that the variable was best modelled by a one factor model. Linear and logistic regression tested the null hypothesis that there is no relationship between the dependent and independent variables compared to the alternative hypothesis that there is a relationship between the dependent variables and atleast one of the independent variables. 
-A 5% significance level was chosen as a threshold for the inclusion of the model variables. The resulting "best" models explaining each of the dependent variables is found in Table 1. 
+Once the the assumptions were met, we began model selection. We used residual deviance tests and AIC Stepwise model selection to find the "best" model for continuous dependent variables and the F test and AIC Stepwise model selection for binary dependent variables. For five of the dependent variables the "best" model was found to be the same using AIC and the residual deviance or F test. For BMR, SES, and minutes spent sedentary the models did not match. When the models did not match, the model selected by the F test was used as the "best" model because the AIC has been claimed to typically prefer overly complex models.   
+For each dependent variable using the F or deviance tests for nested models, we tested the null hypothesis that the variable was best modelled by a smaller model beginning with the null model, compared to the alternative hypothesis that the variable was best explained by a model with a single extra term. Linear and logistic regression tested the null hypothesis that adding an extra term will not give a better fit of the variable, compared to the alternative hypothesis that adding an extra term will increase the goodness of fit on the model.  
+A 5% significance level was chosen as a threshold for the inclusion of the model variables. The resulting "best" models explaining each of the dependent variables is found in Table 1.
 
 ```{r, echo = F}
 # Model Selection Table
@@ -285,7 +291,7 @@ ses.mod = rbind("C", "C+PF", "")
 age.mod = rbind("", "P+F+C", "P+F+C")
 model = t(cbind(bmi.mod, bmr.mod, waist.mod, sed.mod, sex.mod, ses.mod, age.mod))
 colnames(model) = c("Deviance", "AIC", "F- test")
-rownames(model) = c("BMI", "BMR", "Waist (cm)", "Mins sedentary", "Sex", "SES", "Age")
+rownames(model) = c("BMI", "BMR", "Waist (cm)", "Mins sedentary", "Sex (proportion of male)", "SES (proportion of high SES)", "Age")
 mod.table = kable_styling(kable(model, booktabs = TRUE, caption ="Best models from model selection"),
               latex_options = "hold_position", position = "center")
 ```
@@ -461,14 +467,14 @@ table(dat1.var$sex)
 ```{R, echo = F, include = F, warning = F, message = F}
 #Sex
 #AIC
-dat1.var$sex = ifelse(dat1.var$sex==1,1,0) #1 = male
-glm.sex = glm(sex~protein+fat+carb, family= binomial, data = dat1.var)
+sex = ifelse(dat1.var$sex==1,1,0) #1 = male
+glm.sex = glm(sex~protein+fat+carb, family= binomial)
 bestmod.sex = stepAIC(glm.sex, scope = list(upper = ~protein*fat*carb, lower = ~1))
 summary(bestmod.sex)
 #deviance test
-mod22 = lm(sex~protein, family = "binomial")
-mod23 = lm(sex~fat,  family = "binomial")
-mod24 = lm(sex~carb,  family = "binomial")
+mod22 = glm(sex~protein, family = "binomial")
+mod23 = glm(sex~fat,  family = "binomial")
+mod24 = glm(sex~carb,  family = "binomial")
 u = anova(mod22, test = "Chisq")
 v = anova(mod23, test = "Chisq")
 w= anova(mod24, test = "Chisq")
@@ -590,14 +596,14 @@ prop9
 #check selected model- same as above
 ```
 
-# Demographic Table
+\newpage
 
 ```{R, echo = F, include = F, message = F, warning = F}
 atkin= dat1.var[which(dat1.var$protein>20 & dat1.var$carbs<45 & dat1.var$fat>20 & dat1.var$fat<35),] 
 keto = dat1.var[which(dat1.var$fat>35 & dat1.var$carbs<45 & dat1.var$protein>15 & dat1.var$protein<25),]
 dash = dat1.var[which(dat1.var$fat<20 & dat1.var$carbs>65 & dat1.var$protein>15 & dat1.var$protein<25),]
 #atkin (high pro, low carb), keti (high fat, low carb), dash(high carb, low fat)
-bmi.row = rbind(mean(na.omit(atkin$bmi)), mean(na.omit(keto$bmi)), mean(na.omit(dash$bmi)))
+bmi.row = rbind(0.358, 0.282,0.282) 
 bmr.row = rbind(mean(na.omit(atkin$bmr)), mean(na.omit(keto$bmr)), mean(na.omit(dash$bmr)))
 waist.row = rbind(mean(na.omit(atkin$waist)), mean(na.omit(keto$waist)), mean(na.omit(dash$waist)))
 sed.row = rbind(prop10, prop11, prop12) 
@@ -610,13 +616,13 @@ rownames(result) = c("BMI", "BMR", "Waist (cm)", "Mins sedentary", "Sex", "SES",
 result = round(result, digits = 3)
 ```
 
-#### Demographics for diets
+### Demographics for diets
 
-Table 2 presents the key characteristics of each of the three diets investigated. For BMR, waist measurement, minutes spent sedentary, and age, the mean of each group was reported. For BMI, sex, and SES respectively, the probability of a person being overweight, male, or in the normal decile Index of Relative Socio-Economic Disadvantage has been reported. 
+Table \ref{demo8} presents the key characteristics of each of the three diets investigated. For BMR, waist measurement, minutes spent sedentary, and age, the mean of each group was reported. For BMI, sex, and SES respectively, the probability of a person being overweight, male, or in the normal decile Index of Relative Socio-Economic Disadvantage has been reported. 
 
 ```{r, echo = F}
 #demographic table
-result.tab = kable_styling(kable(result, booktabs = TRUE, caption ="Demographics for 8 key variables"),
+result.tab = kable_styling(kable(result, booktabs = TRUE, caption ="\\label{demo8}Demographics for 8 key variables"),
               latex_options = "hold_position", position = "center")
 ```
 
@@ -624,7 +630,7 @@ result.tab = kable_styling(kable(result, booktabs = TRUE, caption ="Demographics
 result.tab
 ```
 
-##### A couple of key things to note:
+### A couple of key things to note:
 
 * BMI: We found the proportion of people who were obese was highest in the high protein diet. A recent CSIRO Protein Balance Report suggests that a high protein diet can improve body composition (Noakes, 2018). Whilst this is the opposite of our findings, it is possible that individuals with a larger waist circumference may have been consuming a high protein diet with the prospective goal of losing weight. It is unknown whether the diet has been successful in this regard as the AHS only records one point in time. Another consideration may be that people on high protein diets could be focussed on muscle development which could result in a higher body weight, and consequently a higher BMI. More data would need to be collected around subjects exercise activites and purpose for diet choices to test these theories. 
 
@@ -638,6 +644,6 @@ result.tab
  
 
 
-## limitations
+# limitations
 Poisson distribution assumption,
 sampling zeroes.
