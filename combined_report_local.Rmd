@@ -59,7 +59,7 @@ row12 = c("Numeric", "Percentage of energy from fat")
 main.var = t(cbind(row1, row2, row3, row4, row5, row6, row7, row8, row9, row10, row11, row12))
 row.names(main.var) = c("BMI", "BMR", "Waist", "Sedentary", "Sex", "SES", "Age", "Energy intake", "Diet status", "Carbohydrates", "Protein", "Fat")
 colnames(main.var) = c("Class", "Description")
-var.tab = kable_styling(kable(main.var, booktabs = TRUE, caption ="\\label{vartab}Description of Variables"),latex_options = "hold_position", position = "center")
+var.tab = kable_styling(kable(main.var, booktabs = TRUE, caption ="\\label{vartab}Description of Variables")%>% column_spec(1, bold = T, color = "black"),latex_options = "hold_position", position = "center")
 ```
 
 ```{r echo=FALSE}
@@ -1028,15 +1028,8 @@ result.tab
 * Sex: Within our dataset 46% of subjects were male yet we found that the probability of being male on a high carbohyrate, medium fat, and medium protein diet was 60%.   
 
 * SES: Despite having a lower proportion of normal SES participants in the study, there was a high proportion who had a high carbohyrate diet but normal fat and protein. This is a surprising result as much literature supports low SES rather than normal and high SES having high carb diets since carbohyrates are cheaper than protein, and might be consumed ecessively in order to to meet dietary protein needs (Brooks, Simpson & Raubenheimer, 2010). However some literature comments on the inconsistenices of results related to protein intake in the context of lower SES  (Darmon,N., Drewnowski,A.,2008).  
- 
 
-<<<<<<< HEAD
 # Conclusion
-=======
-
-# limitations
-Poisson distribution assumption,
-sampling zeroes.
 
 ---
 nocite: |
@@ -1046,9 +1039,9 @@ nocite: |
 # References
 
 ```{r generateBibliography, message=FALSE, warning=FALSE, include=FALSE}
+library("knitcitations")
 require("knitcitations")
 cleanbib()
 options("citation_format" = "pandoc")
 read.bibtex(file = "bibliography.bib")
 ```
->>>>>>> 46d8a739e1225321251be345b39022a930a329ca
