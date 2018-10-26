@@ -234,7 +234,7 @@ The deviance test suggests that
 $$
 \hat{\mu}_{ijk}=y_{ijk}
 $$
-we use the saturated model for estimating the proportions for each diet.  
+we used the saturated model for estimating the proportions for each diet.  
 
 ```{R, echo = F, include = F, message = F, warning = F}
 #setwd("C:/Users/JPRS1/Desktop/STAT3014/Major_project/STAT3014-Major-Project")
@@ -454,13 +454,15 @@ prop10 #atkin
 prop11 #keto
 prop12 #dash
 #Check best model - same as before
+
+table(dat1.var$sex)
 ```
 
 ```{R, echo = F, include = F, warning = F, message = F}
 #Sex
 #AIC
-sex = ifelse(dat1.var$sex==1,1,0) #1 = male
-glm.sex = glm(sex~protein+fat+carb, family= binomial)
+dat1.var$sex = ifelse(dat1.var$sex==1,1,0) #1 = male
+glm.sex = glm(sex~protein+fat+carb, family= binomial, data = dat1.var)
 bestmod.sex = stepAIC(glm.sex, scope = list(upper = ~protein*fat*carb, lower = ~1))
 summary(bestmod.sex)
 #deviance test
@@ -538,6 +540,7 @@ prop4
 prop5
 prop6
 ```
+
 
 ```{r,  echo = F, include = F, warning = F, message = F}
 #Age
@@ -623,16 +626,17 @@ result.tab
 
 ##### A couple of key things to note:
 
-* BMI: The probability of being obese when a person has a high protein diet in this sample is 40.1%. A possible explanation of this may be that people on high protein diets could be focussed on muscle development which weights more than fat, resulting in a higher body weight, and consequently a higher BMI. 
+* BMI: We found the proportion of people who were obese was highest in the high protein diet. A recent CSIRO Protein Balance Report suggests that a high protein diet can improve body composition (Noakes, 2018). Whilst this is the opposite of our findings, it is possible that individuals with a larger waist circumference may have been consuming a high protein diet with the prospective goal of losing weight. It is unknown whether the diet has been successful in this regard as the AHS only records one point in time. Another consideration may be that people on high protein diets could be focussed on muscle development which could result in a higher body weight, and consequently a higher BMI. More data would need to be collected around subjects exercise activites and purpose for diet choices to test these theories. 
 
-* Waist: The largest mean waist size in the dietary model of waist size was 95.12cm for people with a high protein diet. 
-* Sedentary: The high fat low carbohyrate diet (keto diet) had the highest mean sedentary minutes of 2388.410, which equates to 39.8 hours of being sedentary over two days. 
+* Waist: People on high protein diets had the largest measn waist measurement (95.204cam) compared to any of the other diets test, including Atkins, Keto, and the low carbohydrate/ high fat diet. A persons waist size can show whether a person is carrying excess fat around their middle and can be an indicator of the level of internal fat deposits covering internal organs. In conjuction with BMI, they can help determine a persons risk of health issues, such as stroke or heart disease. 
 
-* Sex: The expected proportion of males in the the low fat, low protein, low carb group was 59%. The expected proportion of males in the low carb, med fat and high protein is 63% 
+* Sedentary: The high fat low carbohyrate diet (keto diet) had the highest mean sedentary minutes of 2388.410, which equates to 39.8 hours of being sedentary over two days. This diet is often advertised as an effective diet for athletes, however this sample was not targeted towards athletes. It may have been interesting to look further into this comparing people who said that they were on a diet compared to not on a diet who fell into the Keto diet, and to look into their respective minutes spent sedentary and minutes spent exercising. 
 
-* SES: In the low fat, medium protein, low carb diet a person from medium SES will be in this diet with a probability of 26%. 
+* Sex: Within our dataset 46% of subjects were male yet we found that the probability of being male on a high carbohyrate, medium fat, and medium protein diet was 60%.   
 
-* Age: The most extreme value is in the low fat, medium protein, low carb group. The mean age in this group is 52 years. 
+* SES: Despite having a lower proportion of normal SES participants in the study, there was a high proportion who had a high carbohyrate diet but normal fat and protein. This is a surprising result as much literature supports low SES rather than normal and high SES having high carb diets since carbohyrates are cheaper than protein, and might be consumed ecessively in order to to meet dietary protein needs (Brooks, Simpson & Raubenheimer, 2010). However some literature comments on the inconsistenices of results related to protein intake in the context of lower SES  (Darmon,N., Drewnowski,A.,2008).  
+ 
+
 
 ## limitations
 Poisson distribution assumption,
