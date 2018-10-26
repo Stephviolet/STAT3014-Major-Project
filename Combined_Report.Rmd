@@ -1,0 +1,682 @@
+---
+title: "Nutrition Project Report"
+author: "Dong Luo"
+date: "22 October 2018"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+# Executive summary
+Obesity affects approximately one third of the Australian populated aged 18 years and over (Australian Bureau of Statistics, 2015), posing major health risks to individuals. Obesity has been demonstrated to be related equally to genetics and environmental factors including diet. A person who is dieting has been defined as one who consumes macronutrient groups in an amount lying outside of the acceptable macronutrient distribution ranges (National Health and Medical Research Council, 2017). Here we are interested in whether consuming a diet outside of normal macro-nutrient ranges may be related to Body Mass Index BMI, and thus obesity, and whether a person’s demographics, for example sex, age, waist size, and socioeconomic status is predictive of a person’s choice of diet.
+To investigate this, we developed three research questions.
+
+1. What are the most common diet types among adults in the sample, categorised by the macro- nutrients fat, proteins and carbohydrates.
+
+2. Investigated whether people on different diets have different characteristics and demographics, for example socio- economic status, age, sex, Basal Metabolic Rate (BMR), and BMI.
+
+3. To see if we could predict obesity measured using BMI based on eight variables, including BMR, energy intake, sex, and time spend sedentary.
+
+Throughout the analysis, we focussed on the macro- nutrients protein, fat and carbohydrates. These were because three common types of diets trends have been identified in past research (_____) which are all combinations of different levels of each protein, fat, and carbohydrates. These diets are the Keto diet (high fat, low carbohydrates, medium protein, 18%), the Atkins diet (high protein, low carbohydrates, medium fat, 7%), and the Dash diet (high carbohydrates, low fat, 1.7%).
+
+## Data Cleaning
+
+We exclude the obervations with age less than 18 since our research questions only focus on adult.
+
+```{r import_data, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(kableExtra)
+#setwd("~/GitHub/STAT3014-Major-Project")
+#library(ggplot2)
+Data <- read.csv("C:/Users/luodo/Documents/GitHub/STAT3014-Major-Project/cleanedData.csv")
+#dim(Data)
+adultData<-Data[Data$AGEC>=18,]
+```
+
+##  
+
+We cut each of the continuous variables `CHOPER1`, `FATPER1`, and `PROPER1`, which stannd for the percentage of energy comes from carbohydrate, fat,and protein, into three distinct levels, from low, medium, to high.
+
+|        | Carbohydrate | Fat      | Protein  |
+|--------|--------------|----------|----------|
+| low(%)    | [0,45]       | [0,20]   | [0,15]   |
+| medium(%) | (45,65]      | (20,35]  | (15,25]  |
+| high(%)   | (65,100]     | (35,100] | (25,100] |
+
+```{r cut,echo=FALSE}
+carb.cat<-cut(adultData$CHOPER1,
+              breaks=c(-1,45,65,100),
+              labels=c('low','medium','high'))
+fat.cat<-cut(adultData$FATPER1,
+             breaks=c(-1,20,35,100),
+             labels=c('low','medium','high'))
+protein.cat<-cut(adultData$PROPER1,
+                 breaks=c(-1,15,25,100),
+                 labels=c('low','medium','high'))
+```
+
+By dividing we are interested in the mean proportion of each diet types, so as to identify what are the most popular diet types.
+
+```{r echo=FALSE}
+tables.3way<-table(carb.cat,fat.cat,protein.cat)
+table.y<-NULL
+for(i in 1:3){
+  for(j in 1:3){
+    table.y<-c(table.y,tables.3way[j,,i])
+  }
+}
+table.fat<-factor(rep(c('low','medium','high'),9))
+table.carb<-factor(rep(c('low','medium','high'),each=3,times=3))
+table.protein<-factor(rep(c('low','medium','high'),each=9))
+loglin.dat<-data.frame(y=table.y,
+                          fat=table.fat,
+                          carb=table.carb,
+                          protein=table.protein)
+diet.prop<-cbind(loglin.dat[,1]/nrow(adultData),
+  loglin.dat[,2:4])
+colnames(diet.prop)[1]<-'proportion'
+
+# sort the df by proportion
+diet.prop<-diet.prop[order(
+  diet.prop$proportion,decreasing=TRUE),]
+
+# see most common diet types in our sample
+kable_styling(kable(
+  head(diet.prop),
+  row.names = F,
+  booktabs=TRUE,
+  caption = "Proportion of the top 6 diet types"
+  ),
+  latex_options = 'hold_position',
+  position = "center")
+```
+
+We may be interested to fit log-linear models to analyse this three-way contingency tables to see if there is any independence underlying.  
+
+### Structural Zeroes
+Noticing that there are some cells with value zero in our table. We would treat the zeroes as structural zeroes (impossible combinations), since the variables `CHOPER1` (carbohydrate), `FATPER1` (fat), and `PROPER1` (protein) in the original dataset stand for the proportions, which means some diet types listed in the table such as (high carbohydrate, high fat,high protein) is not possible since the sum of the values of the three variables would exceed 100. We will remove the cells of structural zeroes from the and model the incomplete table. 
+```{r removing_zeroes, echo=FALSE}
+loglin.dat<-loglin.dat[loglin.dat$y>0,]
+```
+
+There are 20 out of 27 cells with positive entries. The null model will have 20-1=19 degrees of freedom and the additive model will have 13 degrees of freedom.
+We start with the addtivie model, which stands for the complete independence.
+
+```{r additive, echo=FALSE, warning=FALSE}
+glm.additive<-glm(y~carb+fat+protein,
+                family='poisson',data=loglin.dat)
+#glm.additive$dev
+```
+
+We found that the deviance for the additive model (including all three factors) is `r glm.additive$dev`. We compare it with the models with one two way interaction. There are three such models, and their residual deviance is shown as below.
+
+```{r echo=FALSE}
+# additive model is for complete independence
+glm.cf<-glm(y~carb+fat+protein+carb:fat,
+                family='poisson',data=loglin.dat)
+glm.cp<-glm(y~carb+fat+protein+carb:protein,
+          family='poisson',data=loglin.dat)
+glm.fp<-glm(y~carb+fat+protein+fat:protein,
+          family='poisson',data=loglin.dat)
+#c(glm.cf$dev,glm.cp$dev,glm.fp$dev)
+dev1.table<-data.frame('Carb:Fat'=glm.cf$dev,
+           'Carb:Protein'=glm.cp$dev,
+           'Fat:Protein'=glm.fp$dev)
+rownames(dev1.table)<-c('Residual Deviance')
+kable_styling(kable(
+  dev1.table,
+  row.names = F,
+  format='latex',
+  booktabs=TRUE),position = "center")
+```
+
+The model with `carb:fat` interaction has the lowest deviance. The difference of deviance between this model and the additive model is `r glm.additive$dev-glm.cf$dev`. The two models are nested and when we compare them, the $H_0$ is the additive model (the smaller model).
+
+$$
+\text{M1}\,(H_0):
+\hat{\mu}=\beta_0+\alpha_i+\beta_j+\gamma_k,
+$$
+
+where $\alpha_i$, $\beta_j$, and $\gamma_k$ denote the $i^{th},j^{th}$ and $k^{th}$ group of carbohydrate, fat, and protein levels
+$$
+\text{M2}\,(H_A): \hat{\mu}=\beta_0+\alpha_i+\beta_j+\gamma_k+(\alpha\beta)_{ij}
+$$
+Under $H_0$, the difference in deviance follows a $\chi^2$ distribution whose degrees of freedom equals the difference in residual degrees of freedom of the two models. 
+If our table was complete, we would expect the difference in degress of freedom to be $(3-1)\times(3-1)=4$, since each factor has 3 levels.   
+Here the difference in degrees of freedom is 3, this is because there was a structural zero in the marginal table of carbohydrate and fat (we cannot have high carbohydrate and high fat at the same time), so we are only adding three parameters when fitting the model. An coefficient of an interaction level in the `glm` function output will be `NA`.   
+The $p$-value for the test is close to 0, so we would reject the null hypothesis and prefer the model with `carb:fat` interaction. This model with one interaction term stands for the block independence.   
+We use the same procedure to test the models with more interaction terms, and the result of the test is summarised in the following table.
+
+```{r more_interactions, message=FALSE, warning=FALSE, include=FALSE}
+# reject the additive model(complete independence)
+glm.cf.cp<-glm(y~carb+fat+protein+carb:fat+carb:protein,
+                family='poisson',data=loglin.dat)
+glm.cf.fp<-glm(y~carb+fat+protein+carb:fat+fat:protein,
+                family='poisson',data=loglin.dat)
+glm.cp.fp<-glm(y~carb+fat+protein+carb:protein+fat:protein,
+                family='poisson',data=loglin.dat)
+c(glm.cf.cp$dev,glm.cf.fp$dev)
+c(glm.cf.cp$df.residual,glm.cf.fp$df.residual)
+#
+1-pchisq(glm.cf$dev-glm.cf.cp$dev,
+glm.cf$df.residual-glm.cf.cp$df.residual)
+anova(glm.cf.cp,test="Chisq")
+# reject null and prefer glm.cf.cp
+
+# test the uniform association case
+glm.u.a<-glm(y~carb+fat+protein+carb:fat+carb:protein+fat:protein,
+                family='poisson',data=loglin.dat)
+glm.u.a$dev
+1-pchisq(glm.cf.cp$dev-glm.u.a$dev,
+glm.cf.cp$df.residual-glm.u.a$df.residual)
+
+# test the saturated model
+glm.sat<-glm(y~carb*fat*protein,
+                family='poisson',data=loglin.dat)
+1-pchisq(glm.u.a$dev-glm.sat$dev,
+glm.u.a$df.residual-glm.sat$df.residual)
+anova(glm.sat,test="Chisq")
+```
+
+
+```{r deviance_table, echo=FALSE, message=FALSE, warning=FALSE}
+# make the deviance table
+# library(dplyr)
+deviances<-round(c(
+  glm.additive$dev,
+  c(glm.cf$dev,glm.cp$dev,glm.fp$dev),
+  c(glm.cf.cp$dev,glm.cf.fp$dev,glm.cp.fp$dev),
+  c(glm.u.a$dev,glm.sat$dev)
+  ),0)
+dfs<-round(c(
+  glm.additive$df.residual,
+  c(glm.cf$df.residual,glm.cp$df.residual,glm.fp$df.residual),
+  c(glm.cf.cp$df.residual,glm.cf.fp$df.residual,glm.cp.fp$df.residual),
+  c(glm.u.a$df.residual,glm.sat$df.residual)
+  ),0)
+collapse_rows_dt <- data.frame(Type = c('Completely Independence Model',
+                                        rep('Block Independence Model',3),
+                                        rep('Conditional Independence Model',3),
+                                        'Uniform Association Model',
+                                        'Saturated Model'),
+                 Model = c('C+F+P', 'P+CF', 'F+CP', 'C+FP',
+                           'CF+CP','CF+FP','CP+FP',
+                           'CF+CP+FP','CFP'),
+                 Deviance = deviances,
+                 d.f. = dfs)
+# kable(collapse_rows_dt, align = "c") %>%
+#   kable_styling(full_width = F) %>%
+#   column_spec(1, bold = T) %>%
+#   collapse_rows(columns = 1:2, valign = "top") %>%
+#   kable_styling(latex_options = 'hold_position',
+#                 position = "center")
+# collapse_rows_dt <- data.frame(C1 = c(rep("a", 10), rep("b", 5)),
+#                  C2 = c(rep("c", 7), rep("d", 3), rep("c", 2), rep("d", 3)),
+#                  C3 = 1:15,
+#                  C4 = sample(c(0,1), 15, replace = TRUE))
+collapse_rows_dt %>%
+kable("latex", booktabs = T, escape = F,
+caption = "Deviances for Poisson log-linear models") %>%
+kable_styling(full_width = F) %>%
+column_spec(1, bold = T) %>%
+collapse_rows(columns = 1, valign = "middle") %>%
+kable_styling(latex_options = 'hold_position',
+              position = "center")
+```
+
+The letter C, F, and P in the table represent the variable carbohydrate, fat, and protein respectively. Symbols such as FP indicate we are including the interactin term `fat:protein`, and when we include an interaction term, we must also include the variables used to compute the interaction. Similarly, when we include the three-way interaction term CFP (`carb:fat:protein`), we include all two-way interactions as well as all of the three variables.  
+The deviance test suggest that
+$$
+\hat{\mu}_{ijk}=y_{ijk}
+$$
+we should use the saturated model for estimating the proportions for each diet.  
+
+```{R, echo = F, include = F, message = F, warning = F}
+#setwd("C:/Users/JPRS1/Desktop/STAT3014/Major_project/STAT3014-Major-Project")
+proj_dat = read.csv("cleanedData.csv",row.names=1)
+dataSteph = proj_dat[which(proj_dat$AGEC >= 18), ]
+
+carb = cut(dataSteph$CHOPER1, breaks=c(-1, 45, 65, 100), labels=c("low", "med", "high"))
+protein = cut(dataSteph$PROPER1, breaks=c(-1, 15, 25, 100), labels=c("low", "med", "high"))
+fat = cut(dataSteph$FATPER1, breaks=c(-1, 20, 35, 100), labels=c("low", "med", "high"))
+
+library(MASS)
+#bmi, age, exercise, 
+dat1.var = dataSteph[,c(1,2,8, 11, 12, 14, 77, 86, 64, 65, 68)]
+names(dat1.var) = c("bmi", "age", "mins.phys", "waist.cm", "bmr", "ses", "mins.sed", "sex", "protein", "fat", "carbs")
+
+library("kableExtra")
+```
+
+#### Predicting Demographics by Diet Type
+This section worked out the best diets to model different dependent variables; BMI, BMR, waist size (cm), mintues spent sedentary, sex, SES, and age. The focus of this area was to predict eight key demographics using protein, fat, and carbohydrate diets. Each of the variables was chosen through discussion with NUTM3001 students, and were modelled using linear regression for numerical variables and logistic regression for binary variables. 
+
+Prior to beginning model selection, assumptions for normality of errors and homogeneity of variance were assessed using Q-Q plots and box plots of residuals, and a residual versus fitted plot was used visually assess homogeneity. An example of the graphs used has been provided in Figure 1 showing the diagnostic plots for the dependent variable BMR. For variables BMR and minutes spent sedentary the normality assumption was not met. We decided to apply a log transformation to BMR and a square root transformation to minutes sedentary to satisfy normality. 
+
+```{r, echo = F}
+bmr = dat1.var$bmr
+bmr.omit = as.data.frame(na.omit(cbind(bmr, protein, fat, carb)))
+aovbmr = lm(log(bmr)~protein+fat+carb, data = bmr.omit)
+```
+
+```{r echo=FALSE, fig.cap='Model Diagnostics',fig.height=2,fig.pos="H",fig.show='hold',fig.fullwidth=TRUE}
+par(mfrow=c(1,3))
+#boxplot(aovbmr$residuals, main = "log(BMR) residuals", ylab = "log(BMR)") 
+plot(aovbmr, which=1:3, add.smooth=FALSE)
+#title("Figure 1", outer=TRUE, line = -1) 
+par(mfrow=c(1,1))
+```
+
+Once the the assumptions were met, we began model selection. We used residula deviance tests and AIC Stepwise model selection to find the "best" model for continuous dependent variables and the F test and AIC Stepwise model selection for binary dependent variables. For five of the dependent variables the "best" model was found to be the same using AIC and the residual deviance or F test. For BMR, SES, and minutes spent sedentary the models did not match. When the models did not match, the model selected by the F test was used as the "best" model because the AIC has been claimed to typically prefer overly complex models. 
+
+For each dependent variable using the F or deviance tests, we tested the null hypothesis that the variable was best modelled by the null model (intercept only) compared to the alternative hypothesis that the variable was best modelled by a one factor model. Linear and logistic regression tested the null hypothesis that there is no relationship between the dependent and independent variables compared to the alternative hypothesis that there is a relationship between the dependent variables and atleast one of the independent variables. 
+A 5% significance level was chosen as a threshold for the inclusion of the model variables. The resulting "best" models explaining each of the dependent variables is found in Table 1. 
+
+```{r, echo = F}
+# Model Selection Table
+bmi.mod = rbind("P", "P", "")
+bmr.mod = rbind("", "C+PF", "P")
+waist.mod = rbind("", "P+C", "P+C")
+sed.mod = rbind("", "P+F+C", "P+F+C")
+sex.mod = rbind("C+PF", "C+PF","")
+ses.mod = rbind("C", "C+PF", "")
+age.mod = rbind("", "P+F+C", "P+F+C")
+
+model = t(cbind(bmi.mod, bmr.mod, waist.mod, sed.mod, sex.mod, ses.mod, age.mod))
+colnames(model) = c("Deviance", "AIC", "F- test")
+rownames(model) = c("BMI", "BMR", "Waist (cm)", "Mins sedentary", "Sex", "SES", "Age")
+
+mod.table = kable_styling(kable(model, booktabs = TRUE, caption ="Best models from model selection"),
+              latex_options = "hold_position", position = "center")
+```
+
+```{r echo=FALSE}
+mod.table
+```
+
+```{r, echo = F, include = F, warning = F, message=F}
+bmi.class = cut(dat1.var$bmi, breaks=c(18.5, 30, 65), labels=c("norm","obese")) #categorical
+bmi.num = ifelse(bmi.class=="norm", 0,1) #binary
+
+bmi.macro = glm(bmi.num~protein+carb+fat, family = binomial)
+best.marco = stepAIC(bmi.macro, scope = list(upper = ~protein*carb*fat, lower = ~1))
+summary(best.marco)
+
+#deviance test
+mod1 = glm(bmi.num~protein, family = binomial) #signif
+mod2 = glm(bmi.num~fat, family = binomial)
+mod3 = glm(bmi.num~carb, family = binomial)
+a = anova(mod1, test = "Chisq")
+b = anova(mod2, test = "Chisq")
+c = anova(mod3, test = "Chisq")
+a 
+b
+c
+
+mod4 = glm(bmi.num~protein+fat, family = binomial) #not signif
+mod5 = glm(bmi.num~protein+carb, family = binomial) #not signif
+d = anova(mod4, test = "Chisq")
+e = anova(mod5, test = "Chisq")
+d
+e
+
+#diet types
+pars = coef(best.marco)
+logistic = function(x){1/(1+exp(-x))}
+prop.low = logistic(pars[1])
+prop.med = logistic(pars[1]+pars[2])
+prop.high = logistic(pars[1]+pars[2]+pars[3])
+prop.low
+prop.med
+prop.high
+```
+
+```{r, echo = F, include = F, warning = F, message = F}
+#Waist Assumptions
+waist = dat1.var$waist.cm
+aovwaist = lm(waist~protein+fat+carb)
+par(mfrow=c(2,2)) 
+boxplot(aovwaist$residuals) 
+plot(aovwaist, which=1:3, add.smooth=FALSE)
+
+#AIC
+bestmod.waist = stepAIC(aovwaist , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.waist)
+
+#deviance test
+mod6 = lm(waist~protein)
+mod7 = lm(waist~fat)
+mod8 = lm(waist~carb)
+f = anova(mod6)
+g = anova(mod7)
+h = anova(mod8)
+f #protein is significant and explains the most of the within factor variation out of the three variables. 
+g
+h 
+
+#protein
+mod9 = lm(waist~protein+fat) 
+mod10 = lm(waist~protein+carb) #signif
+i = anova(mod9)
+j = anova(mod10)
+i
+j
+
+mod11 = lm(waist~protein+carb+fat) #not signif
+f = anova(mod11)
+f
+
+#mean waist size 
+most.ext = 93.3089
+mn.high.pro = 93.3089 +1.8730
+mn.med.carb = 93.3089 +1.8730 - 0.895
+
+#diet types
+prop16 =    93.3089+ 1.8730  #low carb,high prot 
+prop17 =  93.3089 + 0.3184 #high fat, med prot 
+prop16
+prop17
+
+#check final model
+waist.chk = lm(waist~protein+carb)
+par(mfrow=c(2,2)) 
+boxplot(waist.chk$residuals) 
+plot(waist.chk, which=1:3, add.smooth=FALSE)
+```
+
+```{r, echo = F, warning = F, message = F, include = F}
+#BMR
+#Assumptions
+bmr = dat1.var$bmr
+bmr.omit = as.data.frame(na.omit(cbind(bmr, protein, fat, carb)))
+aovbmr = lm(log(bmr)~protein+fat+carb, data = bmr.omit)
+par(mfrow=c(2,2)) 
+boxplot(aovbmr$residuals) 
+plot(aovbmr, which=1:3, add.smooth=FALSE)
+
+#AIC
+bestmod.bmr = stepAIC(aovbmr , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.bmr)
+
+#F test
+mod12 = lm(log(bmr)~protein, data = bmr.omit) 
+mod13 = lm(log(bmr)~fat, data = bmr.omit)
+mod14 = lm(log(bmr)~carb, data = bmr.omit) #most signif at 0.1 level
+k = anova(mod12)
+l = anova(mod13)
+m = anova(mod14)
+k  
+l
+m
+
+#proportion
+prop13 =   6792.647 +  24.462+ 47.487#low carb, med fat, high prot 
+prop14 =  6792.647 -220.555 -112.766  #high fat, lwo carb, med prot 
+prop15 =  6792.647 -190.932 -112.766 #high carb, med prot, low fat 
+prop13
+prop14
+prop15
+
+#check assumptions of chosen model
+bmr.chk = lm(log(bmr)~protein + fat + carb + protein:fat + protein:carb + fat:carb, data = bmr.omit)
+par(mfrow=c(2,2)) 
+boxplot(bmr.chk$residuals) 
+plot(bmr.chk, which=1:3, add.smooth=FALSE)
+```
+
+```{r, echo = F, include = F, warning = F, message = F}
+#Sedentary
+#Assumptions for linear regression
+sed = dat1.var$mins.sed
+sed.omit = as.data.frame(na.omit(cbind(sed, protein, fat, carb)))
+aovsed = lm(sqrt(sed)~protein+fat+carb, data = sed.omit)
+par(mfrow=c(2,2)) 
+boxplot(aovsed$residuals) 
+plot(aovsed, which=1:3, add.smooth=FALSE)
+
+#AIC
+bestmod.sed = stepAIC(aovsed , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.sed)
+
+#deviance test
+mod15 = lm(sqrt(sed)~protein, data = sed.omit)
+mod16 = lm(sqrt(sed)~fat, data = sed.omit)
+mod17 = lm(sqrt(sed)~carb, data = sed.omit)
+n = anova(mod15)
+o = anova(mod16)
+p = anova(mod17)
+n 
+o #most signif
+p
+
+#fat
+mod18 = lm(sqrt(sed)~fat+protein, data = sed.omit) #signif
+mod19 = lm(sqrt(sed)~fat+carb, data = sed.omit)
+q = anova(mod18)
+r = anova(mod19)
+q
+r
+
+#fat+protein
+mod20 = lm(sqrt(sed)~fat+protein+carb, data = sed.omit)#signif
+s = anova(mod20)
+s 
+
+#interaction
+mod21 = lm(sqrt(sed)~fat*protein*carb, data = sed.omit) #not signif
+t = anova(mod21)
+t 
+
+#mean of each group
+prop10 =  2350.15 + 108.18-198.91#low carb, med fat, high prot 37hrs
+prop11 =  2350.15+ 131.18 -92.92  #high fat, lwo carb, med prot 39hrs
+prop12 = 2350.15 -92.92 -203.00#high carb, med prot, low fat #34hrs
+prop10 #atkin
+prop11 #keto
+prop12 #dash
+
+#Check best model - same as before
+```
+
+```{R, echo = F, include = F, warning = F, message = F}
+#Sex
+#AIC
+sex = ifelse(dat1.var$sex==1,1,0) #1 = male
+glm.sex = glm(sex~protein+fat+carb, family= binomial)
+bestmod.sex = stepAIC(glm.sex, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.sex)
+
+#deviance test
+mod22 = lm(sex~protein, family = "binomial")
+mod23 = lm(sex~fat,  family = "binomial")
+mod24 = lm(sex~carb,  family = "binomial")
+u = anova(mod22, test = "Chisq")
+v = anova(mod23, test = "Chisq")
+w= anova(mod24, test = "Chisq")
+u 
+v #signif: explains more within SS variation
+w  #signif
+
+#fat
+mod25 = glm(sex~fat+protein, family = "binomial") #not signif
+mod26 = glm(sex~fat+carb, family = "binomial") #signif
+x = anova(mod25, test = "Chisq")
+y = anova(mod26, test = "Chisq")
+x
+y
+
+#fat+carb
+mod27 = glm(sex~fat+carb+protein, family = "binomial") #signif
+z = anova(mod27, test = "Chisq") 
+z
+
+fat[which.max(glm.sex$fitted.values)]
+protein[which.max(glm.sex$fitted.values)]
+carb[which.max(glm.sex$fitted.values)]
+max(glm.sex$fitted.values)
+prop = logistic(0.46303-0.31307-0.48824) #low carb, med fat, high protein
+pro0 = logistic(0.46303 -0.25332-0.71966)#high carb, low fat, med protein
+prop1 = logistic( 0.46303  -0.27346-0.25332)#med carb, low fat, med prot
+prop2 = logistic( 0.46303 -0.68138-0.25332)#high fat, low carb, med prot
+prop
+pro0
+prop1
+prop2
+
+```
+
+```{r, echo = F, include = F, warning = F, message = F}
+#SES
+#AIC
+dataSteph$SF2SA1QN = as.numeric(as.factor(dataSteph$SF2SA1QN))
+ses = ifelse(dataSteph$SF2SA1QN>4,1,0) #decile [1:4] = 0
+glmadd.ses = glm(ses~protein+fat+carb, family= binomial)
+bestmod.ses = stepAIC(glmadd.ses, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.ses)
+
+#Deviance
+mod28 = glm(ses~protein, family = "binomial")
+mod29 = glm(ses~fat,  family = "binomial")
+mod30 = glm(ses~carb,  family = "binomial") #signif
+aa = anova(mod28, test = "Chisq")
+bb = anova(mod29, test = "Chisq")
+cc = anova(mod30, test = "Chisq")
+aa 
+bb
+cc 
+
+#carbs
+mod31 = glm(ses~carb+protein, family = "binomial") #not signif
+mod32 = glm(ses~carb+fat, family = "binomial") #not signif
+dd = anova(mod31, test = "Chisq")
+ee = anova(mod32, test = "Chisq")
+dd
+ee
+
+#percentages
+fat[which.max(glmadd.ses$fitted.values)]
+protein[which.max(glmadd.ses$fitted.values)]
+carb[which.max(glmadd.ses$fitted.values)]
+max(glmadd.ses$fitted.values)
+
+#diet types
+prop3 = logistic( -1.18602+0.13784-0.12254) #low carb, med fat, high protein
+prop4 = logistic(-1.18602-0.20883+0.31338)#med carb, low fat, med prot
+prop5 = logistic(-1.18602 -0.04306+ 0.31338)#high fat, low carb, med prot
+prop6 = logistic(-1.18602 -0.53563+0.31338)#high carb, low fat, med prot
+prop3
+prop4
+prop5
+prop6
+```
+
+```{r,  echo = F, include = F, warning = F, message = F}
+#Age
+#Assumptions for linear regression
+age = dataSteph$AGEC
+aovadd.age = lm(age~protein+fat+carb)
+par(mfrow=c(2,2)) 
+boxplot(aovadd.age$residuals) 
+plot(aovadd.age, which=1:3, add.smooth=FALSE)
+
+#AIC
+bestmod.age = stepAIC(aovadd.age, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.age)
+
+mod33 = lm(age~protein) #signif
+mod34 = lm(age~fat)
+mod35 = lm(age~carb)
+ff = anova(mod33)
+gg = anova(mod34)
+hh = anova(mod35)
+ff  
+gg 
+hh
+
+#protein
+mod36 = lm(age~protein+carb) #signif
+mod37 = lm(age~protein+fat)
+ii = anova(mod36)
+jj = anova(mod37)
+ii
+jj
+
+mod38 = lm(age~protein+carb+fat) #signif
+kk = anova(mod38)
+kk
+
+
+mod39 = lm(age~protein*carb*fat) #not signif
+ll = anova(mod39)
+ll
+
+#expected mean
+fat[which.max(aovadd.age$fitted.values)]
+protein[which.max(aovadd.age$fitted.values)]
+carb[which.max(aovadd.age$fitted.values)]
+max(aovadd.age$fitted.values)
+
+#diet types
+prop7 = 51.2510-0.7956-0.4439      #low carb, med fat, high protein Y
+prop8 =  51.2510 -3.1630 + 0.7247  #high fat, low carb, med prot Y
+prop9 =  51.2510-6.2463+0.7247#high carb, low fat, med prot Y
+prop7
+prop8
+prop9
+
+#check selected model- same as above
+```
+
+# Demographic Table
+
+```{R, echo = F, include = F, message = F, warning = F}
+atkin= dat1.var[which(dat1.var$protein>20 & dat1.var$carbs<45 & dat1.var$fat>20 & dat1.var$fat<35),] 
+keto = dat1.var[which(dat1.var$fat>35 & dat1.var$carbs<45 & dat1.var$protein>15 & dat1.var$protein<25),]
+dash = dat1.var[which(dat1.var$fat<20 & dat1.var$carbs>65 & dat1.var$protein>15 & dat1.var$protein<25),]
+
+#atkin (high pro, low carb), keti (high fat, low carb), dash(high carb, low fat)
+bmi.row = rbind(mean(na.omit(atkin$bmi)), mean(na.omit(keto$bmi)), mean(na.omit(dash$bmi)))
+bmr.row = rbind(mean(na.omit(atkin$bmr)), mean(na.omit(keto$bmr)), mean(na.omit(dash$bmr)))
+waist.row = rbind(mean(na.omit(atkin$waist)), mean(na.omit(keto$waist)), mean(na.omit(dash$waist)))
+sed.row = rbind(prop10, prop11, prop12) 
+sex.row = rbind(prop, prop2, pro0)
+ses.row = rbind(prop3, prop5, prop6)
+age.row = rbind(mean(na.omit(atkin$age)), mean(na.omit(keto$age)), mean(na.omit(dash$age)))
+
+result = t(cbind(bmi.row, bmr.row, waist.row, sed.row, sex.row, ses.row, age.row))
+colnames(result) = c("Atkins", "Keto", "Low Fat, High Carb")
+rownames(result) = c("BMI", "BMR", "Waist (cm)", "Mins sedentary", "Sex", "SES", "Age")
+result = round(result, digits = 3)
+
+```
+
+#### Demographics for diets
+
+Table 2 presents the key characteristics of each of the three diets investigated. For BMR, waist measurement, minutes spent sedentary, and age, the mean of each group was reported. For BMI, sex, and SES respectively, the probability of a person being overweight, male, or in the normal decile Index of Relative Socio-Economic Disadvantage has been reported. 
+
+```{r, echo = F}
+#demographic table
+result.tab = kable_styling(kable(result, booktabs = TRUE, caption ="Demographics for 8 key variables"),
+              latex_options = "hold_position", position = "center")
+```
+
+```{r echo=FALSE}
+result.tab
+```
+
+##### A couple of key things to note:
+
+* BMI: The probability of being obese when a person has a high protein diet in this sample is 40.1%. A possible explanation of this may be that people on high protein diets could be focussed on muscle development which weights more than fat, resulting in a higher body weight, and consequently a higher BMI. 
+
+* Waist: The largest mean waist size in the dietary model of waist size was 95.12cm for people with a high protein diet. 
+* Sedentary: The high fat low carbohyrate diet (keto diet) had the highest mean sedentary minutes of 2388.410, which equates to 39.8 hours of being sedentary over two days. 
+
+* Sex: The expected proportion of males in the the low fat, low protein, low carb group was 59%. The expected proportion of males in the low carb, med fat and high protein is 63% 
+
+* SES: In the low fat, medium protein, low carb diet a person from medium SES will be in this diet with a probability of 26%. 
+
+* Age: The most extreme value is in the low fat, medium protein, low carb group. The mean age in this group is 52 years. 
+
+## limitations
+Poisson distribution assumption,
+sampling zeroes.
