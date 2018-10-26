@@ -26,6 +26,7 @@ Throughout the analysis, we focussed on the macro- nutrients protein, fat and ca
 ## Limitations
 
 We identified several limitations in our project. Stated below:
+<<<<<<< HEAD
 * This project only focussed on 11 out of the available 144 variables provided in the dataset. Had we had more time, these other variables could have been further investigated to make more accurate or interesting findings.
 * The continuous variables BMI and socio- economic status (SES) were manually split into two groups (normal/ overweight and obese, and low SES and normal SES). This could result a loss of information, or less accurate interpretation of the data.
 * Some of the assumptions in model selection using linear regression were not met so log and square root transformations were applied in some cases to the data. This could affect the interpretation of the data.
@@ -57,7 +58,6 @@ row12 = c("Numeric", "Percentage of energy from fat")
 main.var = t(cbind(row1, row2, row3, row4, row5, row6, row7, row8, row9, row10, row11, row12))
 row.names(main.var) = c("BMI", "BMR", "Waist", "Sedentary", "Sex", "SES", "Age", "Energy intake", "Diet status", "Carbohydrates", "Protein", "Fat")
 colnames(main.var) = c("Class", "Description")
-var.tab = kable_styling(kable(main.var, booktabs = TRUE, caption ="\\label{vartab}Description of Variables")%>% column_spec(1, bold = T, color = "black"),latex_options = "hold_position", position = "center")
 ```
 
 ```{r echo=FALSE}
@@ -114,7 +114,10 @@ protein.cat<-cut(adultData$PROPER1,
 
 We divided the data this way because we were interested in the mean proportion of each diet, so that we could identify the most popular diets within our sample.
 
+<<<<<<< HEAD
 # Research Question 3
+=======
+>>>>>>> parent of 0cfe475... modified the encoding for sex
 
 ```{r echo=FALSE}
 tables.3way<-table(carb.cat,fat.cat,protein.cat)
@@ -286,7 +289,10 @@ $$
 $$
 Therefore, the proportion for each diet can be estimated by the sample proportions.
 
+<<<<<<< HEAD
 # Research Question 2
+=======
+>>>>>>> parent of 0cfe475... modified the encoding for sex
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -627,7 +633,10 @@ $$
 \end{split}
 $$
 
+<<<<<<< HEAD
 # Research Question 3
+=======
+>>>>>>> parent of 0cfe475... modified the encoding for sex
 ```{R, echo = F, include = F, message = F, warning = F}
 #setwd("C:/Users/JPRS1/Desktop/STAT3014/Major_project/STAT3014-Major-Project")
 proj_dat = read.csv("cleanedData.csv",row.names=1)
@@ -1026,16 +1035,27 @@ result.tab
 * Sex: Within our dataset 46% of subjects were male yet we found that the probability of being male on a high carbohyrate, medium fat, and medium protein diet was 60%.   
 
 * SES: Despite having a lower proportion of normal SES participants in the study, there was a high proportion who had a high carbohyrate diet but normal fat and protein. This is a surprising result as much literature supports low SES rather than normal and high SES having high carb diets since carbohyrates are cheaper than protein, and might be consumed ecessively in order to to meet dietary protein needs (Brooks, Simpson & Raubenheimer, 2010). However some literature comments on the inconsistenices of results related to protein intake in the context of lower SES  (Darmon,N., Drewnowski,A.,2008).  
+<<<<<<< HEAD
+=======
+ 
+>>>>>>> parent of 0cfe475... modified the encoding for sex
 
 
 # Conclusion
 
+<<<<<<< HEAD
+=======
+
+# limitations
+Poisson distribution assumption,
+sampling zeroes.
+>>>>>>> parent of 0cfe475... modified the encoding for sex
 
 ---
 nocite: |
   @item1, @item2, @item3, @item4, @item5, @item6
 ...
-
+  
 # References
 
 ```{r generateBibliography, message=FALSE, warning=FALSE, include=FALSE}
