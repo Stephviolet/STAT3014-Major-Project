@@ -17,7 +17,6 @@ library(knitr)
 library(kableExtra)
 ```
 
-
 ```{r echo=FALSE}
 Data <- read.csv("cleanedData.csv")
 adultData<-Data[Data$AGEC>=18,]
@@ -27,8 +26,16 @@ X<-Xy[,-ncol(Xy)]
 y<-Xy[,ncol(Xy)]
 X$BDYMSQ04=as.numeric(ifelse(X$BDYMSQ04 == 5, '0', '1'))
 ```
+To predict the obesity (level of BMI is greater than 30), we chose eight variables as the predictors, which include BMR, energy intake, total minutes spent sitting or lying down, sex, whether currently on a diet, percentage of energy from carbohydrate, percentage of energy from total fat and percentage of energy from protein. 
+We applied linear discriminant analysis, classification and regression tree and logistic regression to investigate our question and estimated using 10-fold cross-validation.
+
+We assign the level of BMI greater than 30 as number 1 which represent obesity and the remaining as number 0 to represent normal people. we also assign people currently on a diet as number 1 and those not a on a diet as number 0, and ignore the situation not known if currently on a diet and not applicable. Thus, we treat all variables that we are interested as numerical variables so that we increase the effectiveness of our analysis and the interpretability of our results.
+
 
 # LDA
+For our prediction attempt, we first use linear discriminant analysis rather than quadratic discriminant analysis because the Interpretation for QDA  is more difficult, but the group means suggest identical interpretations as for LDA.
+After fitting the LDA method, the output (Table \ref{lda_table}) indicates the following interpretations for each of the variables. People who have higher BMR are more likely to be obese as the coefficient of linear discriminant 0.001249 is positive. Lower energy intake increases obesity probability since the coefficient of linear discriminant -0.434204 is negative. People who have lower total minutes spent sedentary are prone to be obese. Females are more likely to have obesity and people on a diet are more likely to be obese compared with people not on a diet. People who have high fat or high protein diet type are more likely to be obese while the probability of obesity reduces with high carbohydrate diet type.
+
 ```{r,echo=FALSE}
 # Load the functions from cvTools into memory.
 # First we are going to load the cross-validation function
@@ -148,7 +155,6 @@ cv.da = function(X,y,method=c("lda","qda"),V,seed=NA)
 }
 ```
 
-
 ```{r,echo=FALSE}
 n = length(y)
 dat = data.frame(y,X)
@@ -162,22 +168,12 @@ colnames(lda.table)<-c('Estimated Coefficients')
 kable_styling(kable(
   lda.table,
   booktabs=TRUE,
-  caption = "Coefficients of Predictors in LDA"
+  caption = "\\label{lda_table}Coefficients of Predictors in LDA"
   ),
   latex_options = 'hold_position',
   position = "center")
 ```
-##Comment:
 
-The above output suggests the following interpretations for each of the variables.
-
-* People who have higher BMR are more likely to be obese.
-* Lower EIBMR1(Energy intake) increases obesity probability (since the coefficient -0.434 is negative).
-* Lower ADTOTSE(Total mins spent sitting or lying down) increases obesity probability.
-* Sex = 1 for males. So females are more likely to be obese.
-* People on a diet are more likely to be obese compared with people not on a diet
-* People who have high fat or high protein diet type are more likely to be obese
-* People who have high carbon diet type decrease the probability of obesity
 
 ```{r,echo=FALSE}
 #cross validation error for LDA.
@@ -185,6 +181,8 @@ res.lda = cv.da(X1,y,method="lda",V,seed=1)
 ```
 
 # CART
+In addition, we proceeded to fit a CART for obesity by the dependent variables we selected before and then we got the output below of CART Fit for Obesity. The tree could be explained precisely by Table \ref{cart_male} and Table \ref{cart_female}. We found that there is no difference of obesity rate between male and female whose level of BMR are lower than 6103. The obesity rate is 68.5 percent for male with the level of BMR greater than 8297 while 80.1 percent of female with BMR greater than 6103 are obese. 83.3 percent of male whose BMR are between 6103 and 8297 are normal. 54.2 percent of female whose BMR are between 6103 and 6390 are normal. Based on this analysis, we may conclude that at the same level of BMR, female are more likely to have obesity than male.
+
 ```{r,echo=FALSE}
 library(rpart)
 X2 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
@@ -192,8 +190,13 @@ X2 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,da
 res.rpart <- rpart(as.factor(y) ~ X2, data=dat)
 
 library(rpart.plot)
-rpart.plot(res.rpart,type=0,extra=1,main="CART Fit for Obesity ",cex.main=2,cex=1)
+```
 
+```{r,echo=FALSE, fig.cap="\\label{cart_fig}CART Fit for Obesity"}
+rpart.plot(res.rpart,type=0,extra=1,main='CART Fit for Obesity',cex.main=1,cex=0.6)
+```
+
+```{r, echo=FALSE}
 #male table
 male.props<-c(' 6.7%',' 68.5%')
 male.df<-t(data.frame(male=male.props))
@@ -202,7 +205,7 @@ rownames(male.df)<-c('estimated obesity rate')
 kable_styling(kable(
   male.df,
   booktabs=TRUE,
-  caption = "Obesity Rate for Male with BMR greater than 6103"
+  caption = "\\label{cart_male}Obesity Rate for Male with BMR greater than 6103"
   ),
   latex_options = 'hold_position',
   position = "center")
@@ -215,18 +218,11 @@ rownames(female.df)<-c('estimated obesity rate')
 kable_styling(kable(
   female.df,
   booktabs=TRUE,
-  caption = "Obesity Rate for Female with BMR greater than 6103"
+  caption = "\\label{cart_female}Obesity Rate for Female with BMR greater than 6103"
   ),
   latex_options = 'hold_position',
   position = "center")
 ```
-##Comment:
-
-* 91.4 percent of people(including male and female) whose BMR are less than 6103 are normal (not obese).
-* 83.3 percent of male whose BMR are between 6103 and 8297 are normal.
-* 68.5 percent of male whose BMR are greater than 8297 are obese.
-* 54.2 percent of female whose BMR are between 6103 and 6390 are normal.
-* 80.1 percent of female whose BMR are greater than 6390 are obese.
 
 
 ```{r,echo=FALSE}
@@ -282,28 +278,18 @@ res.rpart = cv.rpart(X2,y,V,seed=1)
 
 
 # Logistic regression
+As we are interested in a special case on a generalised linear model for binary data which is obesity in our case, we fit a logistic regression model on the same data. The full model has the coefficients for BMR, energy intake, total minutes spent sedentary, sex, whether currently on a diet, percentage of energy from carbohydrate as statistically significantly different from zero at the 0.05 level. Table \ref{logistic} shows the Estimated Coefficients of the Logistic Regression.
+
 ```{r,echo=FALSE}
 #Fit a logistic regression model on most of the data.
 res.glm = glm(y~.,family=binomial,data=X1)
 coef.table<-round(coef(res.glm),6)
 coef.table1<-cbind(c('1',paste('$x_',1:8,'$',sep = '')),coef.table)
 colnames(coef.table1)<-c('Variable','Estimated Coefficient')
-kable(coef.table1,escape = FALSE,caption = 'Estimated Coefficients of the Logistic Regression') %>%
+kable(coef.table1,escape = FALSE,caption = '\\label{logistic}Estimated Coefficients of the Logistic Regression') %>%
 kable_styling(latex_options='hold_position',position='center')
 #coef.table1
 ```
-##Comment:
-The full model has the coefficeints for BMR, EIBMR1, ADTOTSE, SEX, BDYMSQ04, CHOPER1 as statisticlly
-signifficantly different from zero at the 0.05 level. The fitted model is
-$$
-\begin{split}
-\mbox{logit}(p) = &-17.770903  + 0.001879 x_1 - 0.711322 x_2 - 0.00006 x_3 + 3.422641 x4  \\
-& + 0.380154 x_5 - 0.010135 x_6 + 0.001507 x_7 – 0.000998 x_8 
-\end{split}
-$$
-where $p$ is the probability of obesity.
-
-where $x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8$ represents BMR, EIBMR1, ADTOTSE, SEX, BDYMSQ04, CHOPER1, FATPER1, PROPER1 respectively.
 
 ```{r,echo=FALSE}
 cv.glm = function(X,y,V,seed=NA)
@@ -355,7 +341,21 @@ cv.glm = function(X,y,V,seed=NA)
 res.glm.cv = cv.glm(X1,y,V,seed=1)
 ```
 
+The fitted model is
+$$
+\begin{split}
+\mbox{logit}(p) = &-17.770903  + 0.001879 x_1 - 0.711322 x_2 - 0.00006 x_3 + 3.422641 x4  \\
+& + 0.380154 x_5 - 0.010135 x_6 + 0.001507 x_7 - 0.000998 x_8 
+\end{split}
+$$
+where $p$ represent the probability of obesity.
+
+where $x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8$ represents BMR, EIBMR1, ADTOTSE, SEX, BDYMSQ04, CHOPER1, FATPER1, PROPER1 respectively.
+
+From this fitted model, we noticed that the effects of the significant variables on obesity are the same with LDA,  and we can get similar explanations with LDA method but differs that high percentage of energy from protein are less likely to be obese.
+
 #summary
+
 ```{r,echo=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 library(huxtable)
 library(kableExtra)
@@ -366,9 +366,9 @@ errors.df<-(data.frame(Methods,Errors))
 kable_styling(kable(
   errors.df,
   booktabs=TRUE,
-  caption = "Summary of the CV Errors"
+  caption = "\\label{errors_summary}Summary of the CV Errors"
   ),
   latex_options = 'hold_position',
   position = "center")
 ```
-The CV error for LDA is 18.232 percent. The CV error for CART is 17.551 percent. The CV error for glm is 17.778 percent
+Finally, we compare these three methods by computing repeated 10-fold cross-validation errors. Table \ref{errors_summary} shows that the CV error for CART is 17.551 percent which is better than LDA and Logistic Regression. The effect of different methods on obesity are relatively consistent.
