@@ -289,8 +289,7 @@ coef.table<-round(coef(res.glm),6)
 coef.table1<-cbind(c('1',paste('$x_',1:8,'$',sep = '')),coef.table)
 colnames(coef.table1)<-c('Variable','Estimated Coefficient')
 kable(coef.table1,escape = FALSE,caption = 'Estimated Coefficients of the Logistic Regression') %>%
-  kable_styling(latex_options='hold_position',
-                position='center')
+kable_styling(latex_options='hold_position',position='center')
 #coef.table1
 ```
 ##Comment:
