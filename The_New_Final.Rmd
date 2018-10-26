@@ -1,11 +1,12 @@
 ---
-title: "Nutrition Project Report"
+title: "STAT3014/STAT3914 Major Project Report"
 author: "Dong Luo, Steph Standfort, and Anqi Chi"
-date: "22 October 2018"
+date: "26 October 2018"
 bibliography: bibliography.bib
 output:
   pdf_document: 
     number_sections: yes
+    toc: yes
   html_document:
     df_print: paged
 ---
@@ -28,7 +29,15 @@ To investigate this, we developed three research questions.
 
 3. Investigated whether people on different diets have different characteristics and demographics, for example socio- economic status, age, sex, Basal Metabolic Rate (BMR), and BMI.
 
-Throughout the analysis, we focussed on the macro- nutrients protein, fat and carbohydrates. These were because three common types of diets trends have been identified (Kossoff, Turner, Doerrer, Cervenka, Henry, 2016) which are all combinations of different levels of each protein, fat, and carbohydrates. These diets are the Keto diet (high fat, low carbohydrates, medium protein, which made up of 18% of our sample), the Atkins diet (high protein, low carbohydrates, medium fat, 7% of our sample), and the Dash diet (high carbohydrates, low fat, 1.7% of our sample).
+Throughout the analysis, we focussed on the macro- nutrients protein, fat and carbohydrates. These were because three common types of diets trends have been identified (Kossoff, Turner, Doerrer, Cervenka, Henry, 2016) which are all combinations of different levels of each protein, fat, and carbohydrates. These diets are the Keto diet (high fat, low carbohydrates, medium protein), the Atkins diet (high protein, low carbohydrates, medium fat), and the Low Fat-High Carb diet.
+
+## Main Findings
+
+* The estimated proportion of people on Atkins, Keto and Low Fat-High Carb diet are 7.1%, 17.8%, and 1.7% repectively.
+
+* The following variables were found to increase the probability of being obese: being female. being on a diet, higher BMR, lower energy intake, less total minutes spent sitting or lying down, having a low percentage of energy from carbohydrate.
+
+* Some of the findings were unexpected compared to previous literature. For example, men tended to have higher carbohydrate diets compared to women, and high protein diets had a higher proportion of people from low SES deciles compared to normal SES deciles. These findings are further explored in section 3 of this report. 
 
 # Methodologies
 
@@ -67,7 +76,7 @@ We excluded the observations where age was less than 18. This was because our re
 #setwd("~/GitHub/STAT3014-Major-Project")
 #library(ggplot2)
 #Data <- read.csv("C:/Users/luodo/Documents/GitHub/STAT3014-Major-Project/cleanedData.csv")
-Data = read.csv("C:/Users/JPRS1/Desktop/STAT3014/Major project/STAT3014-Major-Project")
+Data = read.csv("cleanedData.csv")
 #dim(Data)
 adultData<-Data[Data$AGEC>=18,]
 ```
@@ -155,6 +164,7 @@ loglin.dat<-loglin.dat[loglin.dat$y>0,]
 ### Log-Linear Models 
 
 There were 20 out of 27 cells with positive entries. The null model will have $20-1=19$ degrees of freedom and the additive model will have 13 degrees of freedom.  
+
 We started with the additvie model, which stands for the complete independence.
 
 ```{r additive, echo=FALSE, warning=FALSE}
@@ -186,7 +196,6 @@ kable_styling(kable(
 ```
 
 The model with `carb:fat` interaction had the lowest deviance. The difference of deviance between this model and the additive model was `r glm.additive$dev-glm.cf$dev`. The two models are nested and when we compared them, the $H_0$ was the additive model (the smaller model).
-
 $$
 \text{M1}\,(H_0):
 \hat{\mu}=\beta_0+\alpha_i+\beta_j+\gamma_k,
@@ -197,10 +206,15 @@ $$
 \text{M2}\,(H_A): \hat{\mu}=\beta_0+\alpha_i+\beta_j+\gamma_k+(\alpha\beta)_{ij}
 $$
 Under $H_0$, the difference in deviance followed a $\chi^2$ distribution whose degrees of freedom equals the difference in residual degrees of freedom of the two models.   
-If our table was complete, we would expect the difference in degrees of freedom to be $(3-1)\times(3-1)=4$, since each factor has 3 levels.     
+
+If our table was complete, we would expect the difference in degrees of freedom to be $(3-1)\times(3-1)=4$, since each factor has 3 levels.    
+
 Here the difference in degrees of freedom is 3. This is because there was a structural zero in the marginal table of carbohydrate and fat (we cannot have high carbohydrate and high fat at the same time), so we were only adding three parameters when fitting the model. A coefficient of an interaction level in the `glm` function output will be `NA`.   
-The $p$-value for the test is close to 0, so we would reject the null hypothesis and prefer the model with `carb:fat` interaction. This model with one interaction term stands for the block independence.      
-We use the same procedure to test the models with more interaction terms, and the result of the test is summarised in Table \ref{dev2}.   
+
+The $p$-value for the test is close to 0, so we would reject the null hypothesis and prefer the model with `carb:fat` interaction. This model with one interaction term stands for the block independence.   
+
+We use the same procedure to test the models with more interaction terms, and the result of the test is summarised in Table \ref{dev2}.  
+
 ```{r more_interactions, message=FALSE, warning=FALSE, include=FALSE}
 # reject the additive model(complete independence)
 glm.cf.cp<-glm(y~carb+fat+protein+carb:fat+carb:protein,
@@ -275,6 +289,7 @@ kable_styling(latex_options = 'hold_position',
 ```
 The letters C, F, and P in the table represent the variables carbohydrate, fat, and protein respectively. Symbols such as FP indicate we are including the interactin term `fat:protein`, and when we include an interaction term we must also include the variables used to compute the interaction. Similarly, when we include the three-way interaction term CFP (`carb:fat:protein`), we include all two-way interactions as well as all of the three variables.  
 The deviance test suggests that we shall choose the saturated model, which implies 
+
 $$
 \hat{\mu}_{ijk}=y_{ijk}.
 $$
@@ -300,6 +315,7 @@ X$BDYMSQ04=as.numeric(ifelse(X$BDYMSQ04 == 5, '0', '1'))
 X$SEX=as.numeric(ifelse(X$SEX == 1, '1', '0'))
 ```
 To predict the obesity (level of BMI is greater than 30), we chose eight variables as the predictors, which include BMR, energy intake, total minutes spent sitting or lying down, sex, whether currently on a diet, percentage of energy from carbohydrate, percentage of energy from total fat and percentage of energy from protein. 
+
 We applied linear discriminant analysis, classification and regression tree and logistic regression to investigate our question and estimated using 10-fold cross-validation.
 
 We assign the level of BMI greater than 30 as number 1 which represent obesity and the remaining as number 0 to represent normal people. we also assign people currently on a diet as number 1 and those not a on a diet as number 0, and ignore the situation not known if currently on a diet and not applicable. Thus, we treat all variables that we are interested as numerical variables so that we increase the effectiveness of our analysis and the interpretability of our results.
@@ -307,6 +323,7 @@ We assign the level of BMI greater than 30 as number 1 which represent obesity a
 
 ### LDA
 For our prediction attempt, we first use linear discriminant analysis rather than quadratic discriminant analysis because the Interpretation for QDA  is more difficult, but the group means suggest identical interpretations as for LDA.
+
 After fitting the LDA method, the output (Table \ref{lda_table}) indicates the following interpretations for each of the variables. People who have higher BMR are more likely to be obese as the coefficient of linear discriminant 0.001249 is positive. Lower energy intake increases obesity probability since the coefficient of linear discriminant -0.434204 is negative. People who have lower total minutes spent sedentary are prone to be obese. Females are more likely to have obesity and people on a diet are more likely to be obese compared with people not on a diet. People who have high fat or high protein diet type are more likely to be obese while the probability of obesity reduces with high carbohydrate diet type.
 
 ```{r,echo=FALSE}
@@ -454,6 +471,7 @@ res.lda = cv.da(X1,y,method="lda",V,seed=1)
 ```
 
 ### CART
+
 In addition, we proceeded to fit a CART for obesity by the dependent variables we selected before and then we got the output below of CART Fit for Obesity. The tree could be explained precisely by Table \ref{cart_male} and Table \ref{cart_female}. We found that there is no difference of obesity rate between male and female whose level of BMR are lower than 6103. The obesity rate is 68.5 percent for male with the level of BMR greater than 8297 while 80.1 percent of female with BMR greater than 6103 are obese. 83.3 percent of male whose BMR are between 6103 and 8297 are normal. 54.2 percent of female whose BMR are between 6103 and 6390 are normal. Based on this analysis, we may conclude that at the same level of BMR, female are more likely to have obesity than male.
 
 ```{r,echo=FALSE}
@@ -559,7 +577,7 @@ res.glm = glm(y~.,family=binomial,data=X1)
 coef.table<-round(coef(res.glm),6)
 coef.table1<-cbind(c('1',paste('$x_',1:8,'$',sep = '')),coef.table)
 colnames(coef.table1)<-c('Variable','Estimated Coefficient')
-
+rownames(coef.table1)<-c('(Intercept)','BMR','Energy Intake','Total mins spent sedentary','Sex','Whether currently on a diet','Carbohydrate diet','Fat diet','Protein diet')
 kable_styling(kable(coef.table1,booktabs=TRUE,escape = FALSE,
             caption = '\\label{logistic}Estimated Coefficients of the Logistic Regression')%>% column_spec(1, bold = T, color = "black")%>%kable_styling(latex_options='hold_position',position='center'))
 ```
@@ -621,6 +639,7 @@ $$
 & + 0.380154 x_5 - 0.010135 x_6 + 0.001507 x_7 - 0.000998 x_8 
 \end{split}
 $$
+
 ### CV Errors
 
 ```{r,echo=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
@@ -634,7 +653,7 @@ kable_styling(kable(
   errors.df,
   booktabs=TRUE,
   caption = "\\label{errors_summary}Summary of the CV Errors"
-  ),
+  )%>% column_spec(1, bold = T, color = "black"),
   latex_options = 'hold_position',
   position = "center")
 ```
@@ -660,7 +679,7 @@ library("kableExtra")
 
 This section worked out the best diets to model different dependent variables; BMI, BMR, waist size (cm), mintues spent sedentary, sex, SES, and age. The focus of this area was to fit eight key demographics using protein, fat, and carbohydrate diets. Each of the variables was chosen through discussion with NUTM3001 students, and were modelled using linear regression for numerical variables and logistic regression for binary variables. 
 
-Prior to beginning model selection, assumptions for normality of errors and homogeneity of variance were assessed using Q-Q plots and box plots of residuals, and a residual versus fitted plot was used visually assess homogeneity of variance and independence. An example of the graphs used has been provided in Figure 1 showing the diagnostic plots for the dependent variable BMR, excluding the boxplot of residuals. For variables BMR and sedentary the normality assumption was not met. We decided to apply a log transformation to BMR and a square root transformation to minutes sedentary to satisfy normality. 
+Prior to beginning model selection, assumptions for normality of errors and homogeneity of variance were assessed using Q-Q plots and box plots of residuals, and a residual versus fitted plot was used visually assess homogeneity of variance and independence. An example of the graphs used has been provided in Figure \ref{diag} showing the diagnostic plots for the dependent variable BMR, excluding the boxplot of residuals. For variables BMR and sedentary the normality assumption was not met. We decided to apply a log transformation to BMR and a square root transformation to minutes sedentary to satisfy normality. 
 
 ```{r, echo = F}
 bmr = dat1.var$bmr
@@ -668,7 +687,7 @@ bmr.omit = as.data.frame(na.omit(cbind(bmr, protein, fat, carb)))
 aovbmr = lm(log(bmr)~protein+fat+carb, data = bmr.omit)
 ```
 
-```{r echo=FALSE, fig.cap='Model Diagnostics',fig.height=2,fig.pos="H",fig.show='hold',fig.fullwidth=TRUE}
+```{r echo=FALSE, fig.cap='\\label{diag}Model Diagnostics',fig.height=2,fig.pos="H",fig.show='hold',fig.fullwidth=TRUE}
 par(mfrow=c(1,3))
 #boxplot(aovbmr$residuals, main = "log(BMR) residuals", ylab = "log(BMR)") 
 plot(aovbmr, which=1:3, add.smooth=FALSE)
@@ -677,8 +696,10 @@ par(mfrow=c(1,1))
 ```
 
 Once the the assumptions were met, we began model selection. We used residual deviance tests and AIC Stepwise model selection to find the "best" model for continuous dependent variables and the F test and AIC Stepwise model selection for binary dependent variables. For five of the dependent variables the "best" model was found to be the same using AIC and the residual deviance or F test. For BMR, SES, and minutes spent sedentary the models did not match. When the models did not match, the model selected by the F test was used as the "best" model because the AIC has been claimed to typically prefer overly complex models.   
+
 For each dependent variable using the F or deviance tests for nested models, we tested the null hypothesis that the variable was best modelled by a smaller model beginning with the null model, compared to the alternative hypothesis that the variable was best explained by a model with a single extra term. Linear and logistic regression tested the null hypothesis that adding an extra term will not give a better fit of the variable, compared to the alternative hypothesis that adding an extra term will increase the goodness of fit on the model.  
-A 5% significance level was chosen as a threshold for the inclusion of the model variables. The resulting "best" models explaining each of the dependent variables is found in Table 1.
+
+A 5% significance level was chosen as a threshold for the inclusion of the model variables. The resulting "best" models explaining each of the dependent variables is shown in Table \ref{model_selection}.
 
 ```{r, echo = F}
 # Model Selection Table
@@ -692,7 +713,7 @@ age.mod = rbind("", "P+F+C", "P+F+C")
 model = t(cbind(bmi.mod, bmr.mod, waist.mod, sed.mod, sex.mod, ses.mod, age.mod))
 colnames(model) = c("Deviance", "AIC", "F- test")
 rownames(model) = c("BMI", "BMR", "Waist (cm)", "Mins sedentary", "Sex (proportion of male)", "SES (proportion of high SES)", "Age")
-mod.table = kable_styling(kable(model, booktabs = TRUE, caption ="Best models from model selection"),
+mod.table = kable_styling(kable(model, booktabs = TRUE, caption ="\\label{model_selection}Best models from model selection")%>% column_spec(1, bold = T, color = "black"),
               latex_options = "hold_position", position = "center")
 ```
 
@@ -1021,7 +1042,7 @@ Table \ref{demo8} presents the key characteristics of each of the three diets in
 
 ```{r, echo = F}
 #demographic table
-result.tab = kable_styling(kable(result, booktabs = TRUE, caption ="\\label{demo8}Demographics for 8 key variables"),
+result.tab = kable_styling(kable(result, booktabs = TRUE, caption ="\\label{demo8}Demographics for 8 key variables")%>% column_spec(1, bold = T, color = "black"),
               latex_options = "hold_position", position = "center")
 ```
 
