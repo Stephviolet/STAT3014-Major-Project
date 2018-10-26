@@ -1,0 +1,1079 @@
+---
+title: "Nutrition Project Report"
+author: "Dong Luo, Steph Standfort, and Anqi Chi"
+date: "22 October 2018"
+bibliography: bibliography.bib
+output:
+  pdf_document: 
+    number_sections: yes
+  html_document:
+    df_print: paged
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+library(kableExtra)
+```
+
+# Executive summary
+Obesity affects approximately one third of the Australian populated aged 18 years and over (Australian Bureau of Statistics, 2015), posing major health risks to individuals. Obesity has been demonstrated to be related equally to genetics and environmental factors including diet. A person who is dieting has been defined as one who consumes macronutrient groups in an amount lying outside of the acceptable macronutrient distribution ranges (National Health and Medical Research Council, 2017). Here we are interested in whether consuming a diet outside of normal macro-nutrient ranges may be related to Body Mass Index BMI, and thus obesity, and whether a person's demographics, for example sex, age, waist size, and socioeconomic status is predictive of a person's choice of diet.
+To investigate this, we developed three research questions.
+
+## Research Questions
+
+1. What are the most common diet types among adults in the sample, categorised by the macro- nutrients fat, proteins and carbohydrates.
+
+2. To see if we could predict obesity measured using BMI based on eight variables, including BMR, energy intake, sex, and time spend sedentary.
+
+3. Investigated whether people on different diets have different characteristics and demographics, for example socio- economic status, age, sex, Basal Metabolic Rate (BMR), and BMI.
+
+Throughout the analysis, we focussed on the macro- nutrients protein, fat and carbohydrates. These were because three common types of diets trends have been identified (Kossoff, Turner, Doerrer, Cervenka, Henry, 2016) which are all combinations of different levels of each protein, fat, and carbohydrates. These diets are the Keto diet (high fat, low carbohydrates, medium protein, which made up of 18% of our sample), the Atkins diet (high protein, low carbohydrates, medium fat, 7% of our sample), and the Dash diet (high carbohydrates, low fat, 1.7% of our sample).
+
+# Methodologies
+
+## Data Cleaning
+We used the code provided by John Ormerod for the STAT3014 Lab 2. Missing values became NAs. BMI, gender, and SES were recoded as binary. Table \ref{vartab} contains details of the variables used in this report. 
+
+```{r include=FALSE}
+row1 = c("Binary", "0 = BMI < 30, 1 = BMI > 30")
+row2 = c("Numeric", "Kilojules burnt per day")
+row3 = c("Numeric", "Waist size in centimeters")
+row4 = c("Numeric", "Minutes spent sitting or lying down")
+row5 = c("Binary", "0 = female, 1 = male")
+row6 = c("Binary", "Socio- economic status where 0 = lower SES, 1 = normal SES")
+row7 = c("Numeric", "Age in years")
+row8 = c("Numeric", "Energy (kilojules)  per day")
+row9 = c("Binary", "0 = not on a diet, 1 = on a diet")
+row10 = c("Numeric", "Percentage of energy from carbohydrates")
+row11 = c("Numeric", "Percentage of energy from Protein")
+row12 = c("Numeric", "Percentage of energy from fat")
+
+main.var = t(cbind(row1, row2, row3, row4, row5, row6, row7, row8, row9, row10, row11, row12))
+row.names(main.var) = c("BMI", "BMR", "Waist", "Sedentary", "Sex", "SES", "Age", "Energy intake", "Diet status", "Carbohydrates", "Protein", "Fat")
+colnames(main.var) = c("Class", "Description")
+var.tab = kable_styling(kable(main.var, booktabs = TRUE, caption ="\\label{vartab}Description of Variables")%>% column_spec(1, bold = T, color = "black"),latex_options = "hold_position", position = "center")
+```
+
+```{r echo=FALSE}
+var.tab
+```
+
+## Proportion of the diets
+
+We excluded the observations where age was less than 18. This was because our research questions focussed on obesity which we determined using the BMI. However BMI does not apply to children, so including under 18s may lead to misleading results. 
+
+```{r import_data, echo=FALSE}
+#setwd("~/GitHub/STAT3014-Major-Project")
+#library(ggplot2)
+#Data <- read.csv("C:/Users/luodo/Documents/GitHub/STAT3014-Major-Project/cleanedData.csv")
+Data = read.csv("C:/Users/JPRS1/Desktop/STAT3014/Major project/STAT3014-Major-Project")
+#dim(Data)
+adultData<-Data[Data$AGEC>=18,]
+```
+
+
+We cut each of the continuous variables `CHOPER1`, `FATPER1`, and `PROPER1`, which are the percentages of total energy coming from carbohydrates, fat,and protein into three distinct levels,low, medium, and high. Table \ref{div} shows the percentages of total energy used to divide the groups. 
+
+```{r, echo = F}
+r1 = c("[0,45]", "[0,20]", "[0,15]")
+r2 = c("(45,65]", "(20,35]", "(15,25]")
+r3 = c("(65,100]", "(35,100]", "(25,100]")
+
+pert= t(cbind(r1, r2, r3))
+row.names(pert) = c("Low (%)", "Medium (%)", "High (%)")
+colnames(pert) = c("Carbohydrates", "Fat", "Protein")
+
+#percentage table
+pert.tab = kable_styling(kable(pert, booktabs = TRUE, caption ="\\label{div}Division of Macro- nutrients by Total Energy  Percentage") %>% column_spec(1, bold = T, color = "black"), latex_options = "hold_position", position = "center")
+              
+```
+
+```{r echo=FALSE}
+pert.tab
+```
+
+```{r cut,echo=FALSE}
+carb.cat<-cut(adultData$CHOPER1,
+              breaks=c(-1,45,65,100),
+              labels=c('low','medium','high'))
+fat.cat<-cut(adultData$FATPER1,
+             breaks=c(-1,20,35,100),
+             labels=c('low','medium','high'))
+protein.cat<-cut(adultData$PROPER1,
+                 breaks=c(-1,15,25,100),
+                 labels=c('low','medium','high'))
+```
+
+We divided the data this way because we were interested in the mean proportion of each diet, so that we could identify the most popular diets within our sample.
+
+## Research Question 1 : Popular Diet Types 
+
+```{r echo=FALSE}
+tables.3way<-table(carb.cat,fat.cat,protein.cat)
+table.y<-NULL
+for(i in 1:3){
+  for(j in 1:3){
+    table.y<-c(table.y,tables.3way[j,,i])
+  }
+}
+table.fat<-factor(rep(c('low','medium','high'),9))
+table.carb<-factor(rep(c('low','medium','high'),each=3,times=3))
+table.protein<-factor(rep(c('low','medium','high'),each=9))
+loglin.dat<-data.frame(y=table.y,
+                          fat=table.fat,
+                          carb=table.carb,
+                          protein=table.protein)
+diet.prop<-cbind(loglin.dat[,1]/nrow(adultData),
+  loglin.dat[,2:4])
+colnames(diet.prop)[1]<-'proportion'
+# sort the df by proportion
+diet.prop<-diet.prop[order(
+  diet.prop$proportion,decreasing=TRUE),]
+# see most common diet types in our sample
+kable_styling(kable(
+  head(diet.prop),
+  row.names = F,
+  booktabs=TRUE,
+  caption = "\\label{diet_prop}Proportion of the top 6 diet types"
+  ),
+  latex_options = 'hold_position',
+  position = "center")
+```
+
+Table \ref{diet_prop} shows the sample prorpotions of the six most popular diet types.  
+We fitted log-linear models to see if there was any independence underlying the three-way contingency table.
+
+### Structural Zeroes
+
+We noticed that there were some cells with value zero in our table. We treated the zeroes as structural zeroes (impossible combinations) since the variables `CHOPER1` (carbohydrate), `FATPER1` (fat), and `PROPER1` (protein) in the original dataset stand for the proportions. This means some of the diets listed in the table, such as high carbohydrate, high fat,high protein were not possible as the sum of the three proportions would exceed 100. We removed the cells of structural zeroes from the and model the incomplete table.
+
+```{r removing_zeroes, echo=FALSE}
+loglin.dat<-loglin.dat[loglin.dat$y>0,]
+```
+
+### Log-Linear Models 
+
+There were 20 out of 27 cells with positive entries. The null model will have $20-1=19$ degrees of freedom and the additive model will have 13 degrees of freedom.  
+We started with the additvie model, which stands for the complete independence.
+
+```{r additive, echo=FALSE, warning=FALSE}
+glm.additive<-glm(y~carb+fat+protein,
+                family='poisson',data=loglin.dat)
+#glm.additive$dev
+```
+
+We found the deviance for the additive model (including all three factors) was `r glm.additive$dev`. We compared it with the models with one two way interaction. There were three such models, and their residual deviance is shown as in Table \ref{dev1}.
+
+```{r echo=FALSE}
+# additive model is for complete independence
+glm.cf<-glm(y~carb+fat+protein+carb:fat,
+                family='poisson',data=loglin.dat)
+glm.cp<-glm(y~carb+fat+protein+carb:protein,
+          family='poisson',data=loglin.dat)
+glm.fp<-glm(y~carb+fat+protein+fat:protein,
+          family='poisson',data=loglin.dat)
+#c(glm.cf$dev,glm.cp$dev,glm.fp$dev)
+dev1.table<-data.frame('CF'=glm.cf$dev,
+           'CP'=glm.cp$dev,
+           'FP'=glm.fp$dev)
+rownames(dev1.table)<-c('Residual Deviance')
+kable_styling(kable(
+  dev1.table,
+  format='latex',
+  caption = '\\label{dev1}Deviances of models with one interaction term',
+  booktabs=TRUE),position = "center")
+```
+
+The model with `carb:fat` interaction had the lowest deviance. The difference of deviance between this model and the additive model was `r glm.additive$dev-glm.cf$dev`. The two models are nested and when we compared them, the $H_0$ was the additive model (the smaller model).
+
+$$
+\text{M1}\,(H_0):
+\hat{\mu}=\beta_0+\alpha_i+\beta_j+\gamma_k,
+$$
+
+where $\alpha_i$, $\beta_j$, and $\gamma_k$ denote the $i^{th},j^{th}$ and $k^{th}$ group of carbohydrate, fat, and protein levels. The alternative hypothesis is
+$$
+\text{M2}\,(H_A): \hat{\mu}=\beta_0+\alpha_i+\beta_j+\gamma_k+(\alpha\beta)_{ij}
+$$
+Under $H_0$, the difference in deviance followed a $\chi^2$ distribution whose degrees of freedom equals the difference in residual degrees of freedom of the two models.   
+If our table was complete, we would expect the difference in degrees of freedom to be $(3-1)\times(3-1)=4$, since each factor has 3 levels.     
+Here the difference in degrees of freedom is 3. This is because there was a structural zero in the marginal table of carbohydrate and fat (we cannot have high carbohydrate and high fat at the same time), so we were only adding three parameters when fitting the model. A coefficient of an interaction level in the `glm` function output will be `NA`.   
+The $p$-value for the test is close to 0, so we would reject the null hypothesis and prefer the model with `carb:fat` interaction. This model with one interaction term stands for the block independence.      
+We use the same procedure to test the models with more interaction terms, and the result of the test is summarised in Table \ref{dev2}.   
+```{r more_interactions, message=FALSE, warning=FALSE, include=FALSE}
+# reject the additive model(complete independence)
+glm.cf.cp<-glm(y~carb+fat+protein+carb:fat+carb:protein,
+                family='poisson',data=loglin.dat)
+glm.cf.fp<-glm(y~carb+fat+protein+carb:fat+fat:protein,
+                family='poisson',data=loglin.dat)
+glm.cp.fp<-glm(y~carb+fat+protein+carb:protein+fat:protein,
+                family='poisson',data=loglin.dat)
+c(glm.cf.cp$dev,glm.cf.fp$dev)
+c(glm.cf.cp$df.residual,glm.cf.fp$df.residual)
+#
+1-pchisq(glm.cf$dev-glm.cf.cp$dev,
+glm.cf$df.residual-glm.cf.cp$df.residual)
+anova(glm.cf.cp,test="Chisq")
+# reject null and prefer glm.cf.cp
+# test the uniform association case
+glm.u.a<-glm(y~carb+fat+protein+carb:fat+carb:protein+fat:protein,
+                family='poisson',data=loglin.dat)
+glm.u.a$dev
+1-pchisq(glm.cf.cp$dev-glm.u.a$dev,
+glm.cf.cp$df.residual-glm.u.a$df.residual)
+# test the saturated model
+glm.sat<-glm(y~carb*fat*protein,
+                family='poisson',data=loglin.dat)
+1-pchisq(glm.u.a$dev-glm.sat$dev,
+glm.u.a$df.residual-glm.sat$df.residual)
+anova(glm.sat,test="Chisq")
+```
+```{r deviance_table, echo=FALSE, message=FALSE, warning=FALSE}
+# make the deviance table
+# library(dplyr)
+deviances<-round(c(
+  glm.additive$dev,
+  c(glm.cf$dev,glm.cp$dev,glm.fp$dev),
+  c(glm.cf.cp$dev,glm.cf.fp$dev,glm.cp.fp$dev),
+  c(glm.u.a$dev,glm.sat$dev)
+  ),0)
+dfs<-round(c(
+  glm.additive$df.residual,
+  c(glm.cf$df.residual,glm.cp$df.residual,glm.fp$df.residual),
+  c(glm.cf.cp$df.residual,glm.cf.fp$df.residual,glm.cp.fp$df.residual),
+  c(glm.u.a$df.residual,glm.sat$df.residual)
+  ),0)
+collapse_rows_dt <- data.frame(Type = c('Completely Independence Model',
+                                        rep('Block Independence Model',3),
+                                        rep('Conditional Independence Model',3),
+                                        'Uniform Association Model',
+                                        'Saturated Model'),
+                 Model = c('C+F+P', 'P+CF', 'F+CP', 'C+FP',
+                           'CF+CP','CF+FP','CP+FP',
+                           'CF+CP+FP','CFP'),
+                 Deviance = deviances,
+                 d.f. = dfs)
+# kable(collapse_rows_dt, align = "c") %>%
+#   kable_styling(full_width = F) %>%
+#   column_spec(1, bold = T) %>%
+#   collapse_rows(columns = 1:2, valign = "top") %>%
+#   kable_styling(latex_options = 'hold_position',
+#                 position = "center")
+# collapse_rows_dt <- data.frame(C1 = c(rep("a", 10), rep("b", 5)),
+#                  C2 = c(rep("c", 7), rep("d", 3), rep("c", 2), rep("d", 3)),
+#                  C3 = 1:15,
+#                  C4 = sample(c(0,1), 15, replace = TRUE))
+collapse_rows_dt %>%
+kable("latex", booktabs = T, escape = F,
+caption = "\\label{dev2}Deviances for Poisson log-linear models") %>%
+kable_styling(full_width = F) %>%
+column_spec(1, bold = T) %>%
+collapse_rows(columns = 1, valign = "middle") %>%
+kable_styling(latex_options = 'hold_position',
+              position = "center")
+```
+The letters C, F, and P in the table represent the variables carbohydrate, fat, and protein respectively. Symbols such as FP indicate we are including the interactin term `fat:protein`, and when we include an interaction term we must also include the variables used to compute the interaction. Similarly, when we include the three-way interaction term CFP (`carb:fat:protein`), we include all two-way interactions as well as all of the three variables.  
+The deviance test suggests that we shall choose the saturated model, which implies 
+$$
+\hat{\mu}_{ijk}=y_{ijk}.
+$$
+Therefore, the proportion for each diet can be estimated by the sample proportions.
+
+## Research Question 2 : Predicting Obesity
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#library(tidyverse)
+library(knitr)
+library(kableExtra)
+```
+
+```{r echo=FALSE}
+Data <- read.csv("cleanedData.csv")
+adultData<-Data[Data$AGEC>=18,]
+obese<-factor(ifelse(adultData$BMISC>=30,'1','0'))
+Xy =na.omit(cbind(adultData[,c("BDYMSQ04","BMR","SEX","EIBMR1","ADTOTSE","CHOPER1","FATPER1","PROPER1")],obese))
+X<-Xy[,-ncol(Xy)]
+y<-Xy[,ncol(Xy)]
+X$BDYMSQ04=as.numeric(ifelse(X$BDYMSQ04 == 5, '0', '1'))
+X$SEX=as.numeric(ifelse(X$SEX == 1, '1', '0'))
+```
+To predict the obesity (level of BMI is greater than 30), we chose eight variables as the predictors, which include BMR, energy intake, total minutes spent sitting or lying down, sex, whether currently on a diet, percentage of energy from carbohydrate, percentage of energy from total fat and percentage of energy from protein. 
+We applied linear discriminant analysis, classification and regression tree and logistic regression to investigate our question and estimated using 10-fold cross-validation.
+
+We assign the level of BMI greater than 30 as number 1 which represent obesity and the remaining as number 0 to represent normal people. we also assign people currently on a diet as number 1 and those not a on a diet as number 0, and ignore the situation not known if currently on a diet and not applicable. Thus, we treat all variables that we are interested as numerical variables so that we increase the effectiveness of our analysis and the interpretability of our results.
+
+
+### LDA
+For our prediction attempt, we first use linear discriminant analysis rather than quadratic discriminant analysis because the Interpretation for QDA  is more difficult, but the group means suggest identical interpretations as for LDA.
+After fitting the LDA method, the output (Table \ref{lda_table}) indicates the following interpretations for each of the variables. People who have higher BMR are more likely to be obese as the coefficient of linear discriminant 0.001249 is positive. Lower energy intake increases obesity probability since the coefficient of linear discriminant -0.434204 is negative. People who have lower total minutes spent sedentary are prone to be obese. Females are more likely to have obesity and people on a diet are more likely to be obese compared with people not on a diet. People who have high fat or high protein diet type are more likely to be obese while the probability of obesity reduces with high carbohydrate diet type.
+
+```{r,echo=FALSE}
+# Load the functions from cvTools into memory.
+# First we are going to load the cross-validation function
+cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interleaved")) 
+{
+  n <- round(rep(n, length.out = 1))
+  if (!isTRUE(n > 0)) 
+    stop("'n' must be positive")
+
+  K <- round(rep(K, length.out = 1))
+  if (!isTRUE((K > 1) && K <= n)) 
+    stop("'K' outside allowable range")
+
+  type <- if (K == n) 
+    "leave-one-out"
+  else match.arg(type)
+  if (type == "random") {
+    R <- round(rep(R, length.out = 1))
+    if (!isTRUE(R > 0)) 
+      R <- 1
+    subsets <- replicate(R, sample(n))
+  }
+  else {
+    R <- 1
+    subsets <- as.matrix(seq_len(n))
+  }
+  which <- rep(seq_len(K), length.out = n)
+  if (type == "consecutive") 
+    which <- rep.int(seq_len(K), tabulate(which))
+  folds <- list(n = n, K = K, R = R, subsets = subsets, which = which)
+  class(folds) <- "cvFolds"
+  folds
+}
+```
+
+```{r,echo=FALSE}
+library(MASS)
+cvFolds = function (n, K = 5, R = 1, type = c("random", "consecutive", "interleaved")) 
+{
+  n <- round(rep(n, length.out = 1))
+  if (!isTRUE(n > 0)) 
+    stop("'n' must be positive")
+
+  K <- round(rep(K, length.out = 1))
+  if (!isTRUE((K > 1) && K <= n)) 
+    stop("'K' outside allowable range")
+
+  type <- if (K == n) 
+    "leave-one-out"
+  else match.arg(type)
+  if (type == "random") {
+    R <- round(rep(R, length.out = 1))
+    if (!isTRUE(R > 0)) 
+      R <- 1
+    subsets <- replicate(R, sample(n))
+  }
+  else {
+    R <- 1
+    subsets <- as.matrix(seq_len(n))
+  }
+  which <- rep(seq_len(K), length.out = n)
+  if (type == "consecutive") 
+    which <- rep.int(seq_len(K), tabulate(which))
+  folds <- list(n = n, K = K, R = R, subsets = subsets, which = which)
+  class(folds) <- "cvFolds"
+  folds
+}
+# k - value of k in KNN
+# 780a6b9a975525f57598113d0798946254bf476c
+V =10 #number of CV folds
+# seed - (optional) internally sets the seed.
+cv.da = function(X,y,method=c("lda","qda"),V,seed=NA)
+{
+  # Set the seed
+  if (!is.na(seed)) {
+    set.seed(seed)
+  }
+  
+  # Set n
+  n = length(y)
+  
+  # Split the data up into V folds
+  cvSets <- cvFolds(n, V)
+  
+  # Loop through each fold and calculate the error for that fold
+  test.error.da <- c()
+  for (i in 1:V) 
+  {
+    # set the indices corresponding to the training and test sets
+    testInds <- cvSets$subsets[which(cvSets$which==i)]
+    trainInds <- (1:n)[-testInds]
+    
+    # Separate y and X into the training and test sets
+    y.test <- y[testInds]
+    X.test <- X[ testInds,]
+    y.train <- y[trainInds]
+    X.train <- X[trainInds,]
+    
+    # Do classification on ith fold
+    if (method=="lda") {
+      res <- lda(y~., data=X,subset=trainInds)
+    }
+    if (method=="qda") {
+      res <- qda(y~., data=X,subset=trainInds)
+    }
+    results.da = predict(res, X.test)$class
+    
+    # Calcuate the test error for this fold
+    test.error.da[i] <- sum(results.da!=y.test)
+  }
+  
+  # Calculate the mean error over each fold
+  cv.error = sum(test.error.da)/n
+  
+  # Return the results
+  return(cv.error)
+}
+```
+
+```{r,echo=FALSE}
+n = length(y)
+dat = data.frame(y,X)
+X1 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
+X1 = data.frame(X1)
+res <- lda(y~., data=X1,subset=1:n)
+## Kable
+lda.table<-round(coef(res),6)
+rownames(lda.table)<-c('BMR','Energy Intake','Total mins spent sedentary','Sex','Whether currently on a diet','Carbohydrate diet','Fat diet','Protein diet')
+colnames(lda.table)<-c('Estimated Coefficients')
+kable_styling(kable(
+  lda.table,
+  booktabs=TRUE,
+  caption = "\\label{lda_table}Coefficients of Predictors in LDA"
+  )%>% column_spec(1, bold = T, color = "black"),
+  latex_options = 'hold_position',
+  position = "center")
+```
+
+
+```{r,echo=FALSE}
+#cross validation error for LDA.
+res.lda = cv.da(X1,y,method="lda",V,seed=1)
+```
+
+### CART
+In addition, we proceeded to fit a CART for obesity by the dependent variables we selected before and then we got the output below of CART Fit for Obesity. The tree could be explained precisely by Table \ref{cart_male} and Table \ref{cart_female}. We found that there is no difference of obesity rate between male and female whose level of BMR are lower than 6103. The obesity rate is 68.5 percent for male with the level of BMR greater than 8297 while 80.1 percent of female with BMR greater than 6103 are obese. 83.3 percent of male whose BMR are between 6103 and 8297 are normal. 54.2 percent of female whose BMR are between 6103 and 6390 are normal. Based on this analysis, we may conclude that at the same level of BMR, female are more likely to have obesity than male.
+
+```{r,echo=FALSE}
+library(rpart)
+X2 = model.matrix(~-1+BMR+EIBMR1+ADTOTSE+SEX+BDYMSQ04+CHOPER1+FATPER1+PROPER1,data=dat)
+# Be careful as coding y as a factor here, Otherwise R will do a regression tree rather than a classification tree
+res.rpart <- rpart(as.factor(y) ~ X2, data=dat)
+
+library(rpart.plot)
+```
+
+```{r,echo=FALSE, fig.cap="\\label{cart_fig}CART Fit for Obesity"}
+rpart.plot(res.rpart,type=0,extra=1,main='CART Fit for Obesity',cex.main=1,cex=0.6)
+```
+
+```{r, echo=FALSE}
+#male table
+male.props<-c(' 6.7%',' 68.5%')
+male.df<-t(data.frame(male=male.props))
+colnames(male.df)<-c('6103 < BMR < 8297','BMR > 8297')
+rownames(male.df)<-c('Estimated obesity rate')
+kable_styling(kable(
+  male.df,
+  booktabs=TRUE,
+  caption = "\\label{cart_male}Obesity Rate for Male with BMR greater than 6103"
+  )%>% column_spec(1, bold = T, color = "black"),
+  latex_options = 'hold_position',
+  position = "center")
+
+# female
+female.props<-c('45.8%','80.1%')
+female.df<-t(data.frame(female=female.props))
+colnames(female.df)<-c('6103 < BMR < 6390','BMR > 6390')
+rownames(female.df)<-c('Estimated obesity rate')
+kable_styling(kable(
+  female.df,
+  booktabs=TRUE,
+  caption = "\\label{cart_female}Obesity Rate for Female with BMR greater than 6103"
+  )%>% column_spec(1, bold = T, color = "black"),
+  latex_options = 'hold_position',
+  position = "center")
+```
+
+
+```{r,echo=FALSE}
+#cross-validation for rpart.
+cv.rpart = function(X,y,V,seed=NA)
+{
+  # Set the seed
+  if (!is.na(seed)) {
+    set.seed(seed)
+  }
+  
+  # Set n
+  n = length(y)
+  
+  # Split the data up into V folds
+  cvSets <- cvFolds(n, V)
+  
+  # Loop through each fold and calculate the error for that fold
+  test.error <- c()
+  for (i in 1:V) 
+  {
+    # set the indices corresponding to the training and test sets
+    testInds <- cvSets$subsets[which(cvSets$which==i)]
+    trainInds <- (1:n)[-testInds]
+    
+    X = data.frame(X)
+    
+    # Separate y and X into the training and test sets
+    y.test <- y[testInds]
+    X.test <- X[ testInds,]
+    y.train <- y[trainInds]
+    X.train <- X[trainInds,]
+  
+    # Do classification on ith fold
+    res.rpart <- rpart(as.factor(y.train) ~., data=X.train)
+    res = predict(res.rpart, newdata=X.test, type = "class")
+    
+    # Calcuate the test error for this fold
+    test.error[i] <- sum(res!=y.test)
+  }
+  
+  # Calculate the mean error over each fold
+  cv.error = sum(test.error)/n
+  
+  # Return the results
+  return(cv.error)
+}
+```
+
+```{r,echo=FALSE}
+res.rpart = cv.rpart(X2,y,V,seed=1)
+```
+
+
+### Logistic regression
+As we are interested in a special case on a generalised linear model for binary data which is obesity in our case, we fit a logistic regression model on the same data. The full model has the coefficients for BMR, energy intake, total minutes spent sedentary, sex, whether currently on a diet, percentage of energy from carbohydrate as statistically significantly different from zero at the 0.05 level. Table \ref{logistic} shows the estimated coefficients of the logistic regression.
+
+```{r,echo=FALSE}
+#Fit a logistic regression model on most of the data.
+res.glm = glm(y~.,family=binomial,data=X1)
+coef.table<-round(coef(res.glm),6)
+coef.table1<-cbind(c('1',paste('$x_',1:8,'$',sep = '')),coef.table)
+colnames(coef.table1)<-c('Variable','Estimated Coefficient')
+
+kable_styling(kable(coef.table1,booktabs=TRUE,escape = FALSE,
+            caption = '\\label{logistic}Estimated Coefficients of the Logistic Regression')%>% column_spec(1, bold = T, color = "black")%>%kable_styling(latex_options='hold_position',position='center'))
+```
+
+```{r,echo=FALSE}
+cv.glm = function(X,y,V,seed=NA)
+{
+  # Set the seed
+  if (!is.na(seed)) {
+    set.seed(seed)
+  }
+  
+  # Set n
+  n = length(y)
+  
+  # Split the data up into V folds
+  cvSets <- cvFolds(n, V)
+  
+  # Loop through each fold and calculate the error for that fold
+  test.error <- c()
+  for (i in 1:V) 
+  {
+    # set the indices corresponding to the training and test sets
+    testInds <- cvSets$subsets[which(cvSets$which==i)]
+    trainInds <- (1:n)[-testInds]
+    
+    X = data.frame(X)
+    
+    # Separate y and X into the training and test sets
+    y.test <- y[testInds]
+    X.test <- X[ testInds,]
+    y.train <- y[trainInds]
+    X.train <- X[trainInds,]
+  
+    # Do classification on ith fold
+    res.glm <- glm(y.train ~., data=X.train, family=binomial)
+    res = round(predict(res.glm, newdata=X.test, type="response"))
+    
+    # Calcuate the test error for this fold
+    test.error[i] <- sum(res!=y.test)
+  }
+  
+  # Calculate the mean error over each fold
+  cv.error = sum(test.error)/n
+  
+  # Return the results
+  return(cv.error)
+}
+```
+
+```{r echo=FALSE}
+res.glm.cv = cv.glm(X1,y,V,seed=1)
+```
+
+The fitted model is
+$$
+\begin{split}
+\mbox{logit}(p) = &-17.770903  + 0.001879 x_1 - 0.711322 x_2 - 0.00006 x_3 - 3.422641 x4  \\
+& + 0.380154 x_5 - 0.010135 x_6 + 0.001507 x_7 - 0.000998 x_8 
+\end{split}
+$$
+### CV Errors
+
+```{r,echo=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+library(huxtable)
+library(kableExtra)
+#Kable
+Methods = c( 'LDA', 'CART', 'Logistic Regression')
+Errors = round(100*c(res.lda, res.rpart, res.glm.cv),3)
+errors.df<-(data.frame(Methods,Errors))
+kable_styling(kable(
+  errors.df,
+  booktabs=TRUE,
+  caption = "\\label{errors_summary}Summary of the CV Errors"
+  ),
+  latex_options = 'hold_position',
+  position = "center")
+```
+
+Finally, we compare these three methods by computing repeated 10-fold cross-validation errors. Table \ref{errors_summary} shows that the CV error for CART is 17.551 percent which is better than LDA and Logistic Regression. The effect of different methods on obesity are relatively consistent.
+
+## Research Question 3 : Comparing Demographics Between Diets
+```{R, echo = F, include = F, message = F, warning = F}
+#setwd("C:/Users/JPRS1/Desktop/STAT3014/Major_project/STAT3014-Major-Project")
+proj_dat = read.csv("cleanedData.csv",row.names=1)
+dataSteph = proj_dat[which(proj_dat$AGEC >= 18), ]
+carb = cut(dataSteph$CHOPER1, breaks=c(-1, 45, 65, 100), labels=c("low", "med", "high"))
+protein = cut(dataSteph$PROPER1, breaks=c(-1, 15, 25, 100), labels=c("low", "med", "high"))
+fat = cut(dataSteph$FATPER1, breaks=c(-1, 20, 35, 100), labels=c("low", "med", "high"))
+library(MASS)
+#bmi, age, exercise, 
+dat1.var = dataSteph[,c(1,2,8, 11, 12, 14, 77, 86, 64, 65, 68)]
+names(dat1.var) = c("bmi", "age", "mins.phys", "waist.cm", "bmr", "ses", "mins.sed", "sex", "protein", "fat", "carbs")
+library("kableExtra")
+```
+
+### Model Selection
+
+This section worked out the best diets to model different dependent variables; BMI, BMR, waist size (cm), mintues spent sedentary, sex, SES, and age. The focus of this area was to fit eight key demographics using protein, fat, and carbohydrate diets. Each of the variables was chosen through discussion with NUTM3001 students, and were modelled using linear regression for numerical variables and logistic regression for binary variables. 
+
+Prior to beginning model selection, assumptions for normality of errors and homogeneity of variance were assessed using Q-Q plots and box plots of residuals, and a residual versus fitted plot was used visually assess homogeneity of variance and independence. An example of the graphs used has been provided in Figure 1 showing the diagnostic plots for the dependent variable BMR, excluding the boxplot of residuals. For variables BMR and sedentary the normality assumption was not met. We decided to apply a log transformation to BMR and a square root transformation to minutes sedentary to satisfy normality. 
+
+```{r, echo = F}
+bmr = dat1.var$bmr
+bmr.omit = as.data.frame(na.omit(cbind(bmr, protein, fat, carb)))
+aovbmr = lm(log(bmr)~protein+fat+carb, data = bmr.omit)
+```
+
+```{r echo=FALSE, fig.cap='Model Diagnostics',fig.height=2,fig.pos="H",fig.show='hold',fig.fullwidth=TRUE}
+par(mfrow=c(1,3))
+#boxplot(aovbmr$residuals, main = "log(BMR) residuals", ylab = "log(BMR)") 
+plot(aovbmr, which=1:3, add.smooth=FALSE)
+#title("Figure 1", outer=TRUE, line = -1) 
+par(mfrow=c(1,1))
+```
+
+Once the the assumptions were met, we began model selection. We used residual deviance tests and AIC Stepwise model selection to find the "best" model for continuous dependent variables and the F test and AIC Stepwise model selection for binary dependent variables. For five of the dependent variables the "best" model was found to be the same using AIC and the residual deviance or F test. For BMR, SES, and minutes spent sedentary the models did not match. When the models did not match, the model selected by the F test was used as the "best" model because the AIC has been claimed to typically prefer overly complex models.   
+For each dependent variable using the F or deviance tests for nested models, we tested the null hypothesis that the variable was best modelled by a smaller model beginning with the null model, compared to the alternative hypothesis that the variable was best explained by a model with a single extra term. Linear and logistic regression tested the null hypothesis that adding an extra term will not give a better fit of the variable, compared to the alternative hypothesis that adding an extra term will increase the goodness of fit on the model.  
+A 5% significance level was chosen as a threshold for the inclusion of the model variables. The resulting "best" models explaining each of the dependent variables is found in Table 1.
+
+```{r, echo = F}
+# Model Selection Table
+bmi.mod = rbind("P", "P", "")
+bmr.mod = rbind("", "C+PF", "P")
+waist.mod = rbind("", "P+C", "P+C")
+sed.mod = rbind("", "P+F+C", "P+F+C")
+sex.mod = rbind("C+PF", "C+PF","")
+ses.mod = rbind("C", "C+PF", "")
+age.mod = rbind("", "P+F+C", "P+F+C")
+model = t(cbind(bmi.mod, bmr.mod, waist.mod, sed.mod, sex.mod, ses.mod, age.mod))
+colnames(model) = c("Deviance", "AIC", "F- test")
+rownames(model) = c("BMI", "BMR", "Waist (cm)", "Mins sedentary", "Sex (proportion of male)", "SES (proportion of high SES)", "Age")
+mod.table = kable_styling(kable(model, booktabs = TRUE, caption ="Best models from model selection"),
+              latex_options = "hold_position", position = "center")
+```
+
+```{r echo=FALSE}
+mod.table
+```
+
+```{r, echo = F, include = F, warning = F, message=F}
+bmi.class = cut(dat1.var$bmi, breaks=c(18.5, 30, 65), labels=c("norm","obese")) #categorical
+bmi.num = ifelse(bmi.class=="norm", 0,1) #binary
+bmi.macro = glm(bmi.num~protein+carb+fat, family = binomial)
+best.marco = stepAIC(bmi.macro, scope = list(upper = ~protein*carb*fat, lower = ~1))
+summary(best.marco)
+#deviance test
+mod1 = glm(bmi.num~protein, family = binomial) #signif
+mod2 = glm(bmi.num~fat, family = binomial)
+mod3 = glm(bmi.num~carb, family = binomial)
+a = anova(mod1, test = "Chisq")
+b = anova(mod2, test = "Chisq")
+c = anova(mod3, test = "Chisq")
+a 
+b
+c
+mod4 = glm(bmi.num~protein+fat, family = binomial) #not signif
+mod5 = glm(bmi.num~protein+carb, family = binomial) #not signif
+d = anova(mod4, test = "Chisq")
+e = anova(mod5, test = "Chisq")
+d
+e
+#diet types
+pars = coef(best.marco)
+logistic = function(x){1/(1+exp(-x))}
+prop.low = logistic(pars[1])
+prop.med = logistic(pars[1]+pars[2])
+prop.high = logistic(pars[1]+pars[2]+pars[3])
+prop.low
+prop.med
+prop.high
+```
+
+```{r, echo = F, include = F, warning = F, message = F}
+#Waist Assumptions
+waist = dat1.var$waist.cm
+aovwaist = lm(waist~protein+fat+carb)
+par(mfrow=c(2,2)) 
+boxplot(aovwaist$residuals) 
+plot(aovwaist, which=1:3, add.smooth=FALSE)
+#AIC
+bestmod.waist = stepAIC(aovwaist , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.waist)
+#deviance test
+mod6 = lm(waist~protein)
+mod7 = lm(waist~fat)
+mod8 = lm(waist~carb)
+f = anova(mod6)
+g = anova(mod7)
+h = anova(mod8)
+f #protein is significant and explains the most of the within factor variation out of the three variables. 
+g
+h 
+#protein
+mod9 = lm(waist~protein+fat) 
+mod10 = lm(waist~protein+carb) #signif
+i = anova(mod9)
+j = anova(mod10)
+i
+j
+mod11 = lm(waist~protein+carb+fat) #not signif
+f = anova(mod11)
+f
+#mean waist size 
+most.ext = 93.3089
+mn.high.pro = 93.3089 +1.8730
+mn.med.carb = 93.3089 +1.8730 - 0.895
+#diet types
+prop16 =    93.3089+ 1.8730  #low carb,high prot 
+prop17 =  93.3089 + 0.3184 #high fat, med prot 
+prop16
+prop17
+#check final model
+waist.chk = lm(waist~protein+carb)
+par(mfrow=c(2,2)) 
+boxplot(waist.chk$residuals) 
+plot(waist.chk, which=1:3, add.smooth=FALSE)
+```
+
+```{r, echo = F, warning = F, message = F, include = F}
+#BMR
+#Assumptions
+bmr = dat1.var$bmr
+bmr.omit = as.data.frame(na.omit(cbind(bmr, protein, fat, carb)))
+aovbmr = lm(log(bmr)~protein+fat+carb, data = bmr.omit)
+par(mfrow=c(2,2)) 
+boxplot(aovbmr$residuals) 
+plot(aovbmr, which=1:3, add.smooth=FALSE)
+#AIC
+bestmod.bmr = stepAIC(aovbmr , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.bmr)
+#F test
+mod12 = lm(log(bmr)~protein, data = bmr.omit) 
+mod13 = lm(log(bmr)~fat, data = bmr.omit)
+mod14 = lm(log(bmr)~carb, data = bmr.omit) #most signif at 0.1 level
+k = anova(mod12)
+l = anova(mod13)
+m = anova(mod14)
+k  
+l
+m
+#proportion
+prop13 =   6792.647 +  24.462+ 47.487#low carb, med fat, high prot 
+prop14 =  6792.647 -220.555 -112.766  #high fat, lwo carb, med prot 
+prop15 =  6792.647 -190.932 -112.766 #high carb, med prot, low fat 
+prop13
+prop14
+prop15
+#check assumptions of chosen model
+bmr.chk = lm(log(bmr)~protein + fat + carb + protein:fat + protein:carb + fat:carb, data = bmr.omit)
+par(mfrow=c(2,2)) 
+boxplot(bmr.chk$residuals) 
+plot(bmr.chk, which=1:3, add.smooth=FALSE)
+```
+
+```{r, echo = F, include = F, warning = F, message = F}
+#Sedentary
+#Assumptions for linear regression
+sed = dat1.var$mins.sed
+sed.omit = as.data.frame(na.omit(cbind(sed, protein, fat, carb)))
+aovsed = lm(sqrt(sed)~protein+fat+carb, data = sed.omit)
+par(mfrow=c(2,2)) 
+boxplot(aovsed$residuals) 
+plot(aovsed, which=1:3, add.smooth=FALSE)
+#AIC
+bestmod.sed = stepAIC(aovsed , scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.sed)
+#deviance test
+mod15 = lm(sqrt(sed)~protein, data = sed.omit)
+mod16 = lm(sqrt(sed)~fat, data = sed.omit)
+mod17 = lm(sqrt(sed)~carb, data = sed.omit)
+n = anova(mod15)
+o = anova(mod16)
+p = anova(mod17)
+n 
+o #most signif
+p
+#fat
+mod18 = lm(sqrt(sed)~fat+protein, data = sed.omit) #signif
+mod19 = lm(sqrt(sed)~fat+carb, data = sed.omit)
+q = anova(mod18)
+r = anova(mod19)
+q
+r
+#fat+protein
+mod20 = lm(sqrt(sed)~fat+protein+carb, data = sed.omit)#signif
+s = anova(mod20)
+s 
+#interaction
+mod21 = lm(sqrt(sed)~fat*protein*carb, data = sed.omit) #not signif
+t = anova(mod21)
+t 
+#mean of each group
+prop10 =  2350.15 + 108.18-198.91#low carb, med fat, high prot 37hrs
+prop11 =  2350.15+ 131.18 -92.92  #high fat, lwo carb, med prot 39hrs
+prop12 = 2350.15 -92.92 -203.00#high carb, med prot, low fat #34hrs
+prop10 #atkin
+prop11 #keto
+prop12 #dash
+#Check best model - same as before
+
+table(dat1.var$sex)
+```
+
+```{R, echo = F, include = F, warning = F, message = F}
+#Sex
+#AIC
+sex = ifelse(dat1.var$sex==1,1,0) #1 = male
+glm.sex = glm(sex~protein+fat+carb, family= binomial)
+bestmod.sex = stepAIC(glm.sex, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.sex)
+#deviance test
+mod22 = glm(sex~protein, family = "binomial")
+mod23 = glm(sex~fat,  family = "binomial")
+mod24 = glm(sex~carb,  family = "binomial")
+u = anova(mod22, test = "Chisq")
+v = anova(mod23, test = "Chisq")
+w= anova(mod24, test = "Chisq")
+u 
+v #signif: explains more within SS variation
+w  #signif
+#fat
+mod25 = glm(sex~fat+protein, family = "binomial") #not signif
+mod26 = glm(sex~fat+carb, family = "binomial") #signif
+x = anova(mod25, test = "Chisq")
+y = anova(mod26, test = "Chisq")
+x
+y
+#fat+carb
+mod27 = glm(sex~fat+carb+protein, family = "binomial") #signif
+z = anova(mod27, test = "Chisq") 
+z
+fat[which.max(glm.sex$fitted.values)]
+protein[which.max(glm.sex$fitted.values)]
+carb[which.max(glm.sex$fitted.values)]
+max(glm.sex$fitted.values)
+prop = logistic(0.46303-0.31307-0.48824) #low carb, med fat, high protein
+pro0 = logistic(0.46303 -0.25332-0.71966)#high carb, low fat, med protein
+prop1 = logistic( 0.46303  -0.27346-0.25332)#med carb, low fat, med prot
+prop2 = logistic( 0.46303 -0.68138-0.25332)#high fat, low carb, med prot
+prop
+pro0
+prop1
+prop2
+```
+
+```{r, echo = F, include = F, warning = F, message = F}
+#SES
+#AIC
+dataSteph$SF2SA1QN = as.numeric(as.factor(dataSteph$SF2SA1QN))
+ses = ifelse(dataSteph$SF2SA1QN>4,1,0) #decile [1:4] = 0
+glmadd.ses = glm(ses~protein+fat+carb, family= binomial)
+bestmod.ses = stepAIC(glmadd.ses, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.ses)
+#Deviance
+mod28 = glm(ses~protein, family = "binomial")
+mod29 = glm(ses~fat,  family = "binomial")
+mod30 = glm(ses~carb,  family = "binomial") #signif
+aa = anova(mod28, test = "Chisq")
+bb = anova(mod29, test = "Chisq")
+cc = anova(mod30, test = "Chisq")
+aa 
+bb
+cc 
+#carbs
+mod31 = glm(ses~carb+protein, family = "binomial") #not signif
+mod32 = glm(ses~carb+fat, family = "binomial") #not signif
+dd = anova(mod31, test = "Chisq")
+ee = anova(mod32, test = "Chisq")
+dd
+ee
+#percentages
+fat[which.max(glmadd.ses$fitted.values)]
+protein[which.max(glmadd.ses$fitted.values)]
+carb[which.max(glmadd.ses$fitted.values)]
+max(glmadd.ses$fitted.values)
+#diet types
+prop3 = logistic( -1.18602+0.13784-0.12254) #low carb, med fat, high protein
+prop4 = logistic(-1.18602-0.20883+0.31338)#med carb, low fat, med prot
+prop5 = logistic(-1.18602 -0.04306+ 0.31338)#high fat, low carb, med prot
+prop6 = logistic(-1.18602 -0.53563+0.31338)#high carb, low fat, med prot
+prop3
+prop4
+prop5
+prop6
+```
+
+
+```{r,  echo = F, include = F, warning = F, message = F}
+#Age
+#Assumptions for linear regression
+age = dataSteph$AGEC
+aovadd.age = lm(age~protein+fat+carb)
+par(mfrow=c(2,2)) 
+boxplot(aovadd.age$residuals) 
+plot(aovadd.age, which=1:3, add.smooth=FALSE)
+#AIC
+bestmod.age = stepAIC(aovadd.age, scope = list(upper = ~protein*fat*carb, lower = ~1))
+summary(bestmod.age)
+mod33 = lm(age~protein) #signif
+mod34 = lm(age~fat)
+mod35 = lm(age~carb)
+ff = anova(mod33)
+gg = anova(mod34)
+hh = anova(mod35)
+ff  
+gg 
+hh
+#protein
+mod36 = lm(age~protein+carb) #signif
+mod37 = lm(age~protein+fat)
+ii = anova(mod36)
+jj = anova(mod37)
+ii
+jj
+mod38 = lm(age~protein+carb+fat) #signif
+kk = anova(mod38)
+kk
+mod39 = lm(age~protein*carb*fat) #not signif
+ll = anova(mod39)
+ll
+#expected mean
+fat[which.max(aovadd.age$fitted.values)]
+protein[which.max(aovadd.age$fitted.values)]
+carb[which.max(aovadd.age$fitted.values)]
+max(aovadd.age$fitted.values)
+#diet types
+prop7 = 51.2510-0.7956-0.4439      #low carb, med fat, high protein Y
+prop8 =  51.2510 -3.1630 + 0.7247  #high fat, low carb, med prot Y
+prop9 =  51.2510-6.2463+0.7247#high carb, low fat, med prot Y
+prop7
+prop8
+prop9
+#check selected model- same as above
+```
+
+
+```{R, echo = F, include = F, message = F, warning = F}
+atkin= dat1.var[which(dat1.var$protein>20 & dat1.var$carbs<45 & dat1.var$fat>20 & dat1.var$fat<35),] 
+keto = dat1.var[which(dat1.var$fat>35 & dat1.var$carbs<45 & dat1.var$protein>15 & dat1.var$protein<25),]
+dash = dat1.var[which(dat1.var$fat<20 & dat1.var$carbs>65 & dat1.var$protein>15 & dat1.var$protein<25),]
+#atkin (high pro, low carb), keti (high fat, low carb), dash(high carb, low fat)
+bmi.row = rbind(0.358, 0.282,0.282) 
+bmr.row = rbind(mean(na.omit(atkin$bmr)), mean(na.omit(keto$bmr)), mean(na.omit(dash$bmr)))
+waist.row = rbind(mean(na.omit(atkin$waist)), mean(na.omit(keto$waist)), mean(na.omit(dash$waist)))
+sed.row = rbind(prop10, prop11, prop12) 
+sex.row = rbind(prop, prop2, pro0)
+ses.row = rbind(prop3, prop5, prop6)
+age.row = rbind(mean(na.omit(atkin$age)), mean(na.omit(keto$age)), mean(na.omit(dash$age)))
+result = t(cbind(bmi.row, bmr.row, waist.row, sed.row, sex.row, ses.row, age.row))
+colnames(result) = c("Atkins", "Keto", "Low Fat, High Carb")
+rownames(result) = c("BMI", "BMR", "Waist (cm)", "Mins sedentary", "Sex", "SES", "Age")
+result = round(result, digits = 3)
+```
+
+### Demographics for diets
+
+Table \ref{demo8} presents the key characteristics of each of the three diets investigated. For BMR, waist measurement, minutes spent sedentary, and age, the mean of each group was reported. For BMI, sex, and SES respectively, the probability of a person being overweight, male, or in the normal decile Index of Relative Socio-Economic Disadvantage has been reported. 
+
+```{r, echo = F}
+#demographic table
+result.tab = kable_styling(kable(result, booktabs = TRUE, caption ="\\label{demo8}Demographics for 8 key variables"),
+              latex_options = "hold_position", position = "center")
+```
+
+```{r echo=FALSE}
+result.tab
+```
+
+### A couple of key things to note:
+
+* BMI: We found the proportion of people who were obese was highest in the high protein diet. A recent CSIRO Protein Balance Report suggests that a high protein diet can improve body composition (Noakes, 2018). Whilst this is the opposite of our findings, it is possible that individuals with a larger waist circumference may have been consuming a high protein diet with the prospective goal of losing weight. It is unknown whether the diet has been successful in this regard as the AHS only records one point in time. Another consideration may be that people on high protein diets could be focussed on muscle development which could result in a higher body weight, and consequently a higher BMI. More data would need to be collected around subjects exercise activites and purpose for diet choices to test these theories. 
+
+* Waist: People on high protein diets had the largest measn waist measurement (95.204cam) compared to any of the other diets test, including Atkins, Keto, and the low carbohydrate/ high fat diet. A persons waist size can show whether a person is carrying excess fat around their middle and can be an indicator of the level of internal fat deposits covering internal organs. In conjuction with BMI, they can help determine a persons risk of health issues, such as stroke or heart disease. 
+
+* Sedentary: The high fat low carbohyrate diet (keto diet) had the highest mean sedentary minutes of 2388.410, which equates to 39.8 hours of being sedentary over two days. This diet is often advertised as an effective diet for athletes, however this sample was not targeted towards athletes. It may have been interesting to look further into this comparing people who said that they were on a diet compared to not on a diet who fell into the Keto diet, and to look into their respective minutes spent sedentary and minutes spent exercising. 
+
+* Sex: Within our dataset 46% of subjects were male yet we found that the probability of being male on a high carbohyrate, medium fat, and medium protein diet was 60%.   
+
+* SES: Despite having a lower proportion of normal SES participants in the study, there was a high proportion who had a high carbohyrate diet but normal fat and protein. This is a surprising result as much literature supports low SES rather than normal and high SES having high carb diets since carbohyrates are cheaper than protein, and might be consumed ecessively in order to to meet dietary protein needs (Brooks, Simpson & Raubenheimer, 2010). However some literature comments on the inconsistenices of results related to protein intake in the context of lower SES  (Darmon,N., Drewnowski,A.,2008).  
+ 
+## Limitations
+
+We identified several limitations in our project. Stated below:
+
+* This project only focussed on 11 out of the available 144 variables provided in the dataset. Had we had more time, these other variables could have been further investigated to make more accurate or interesting findings.
+
+* The assumption of Poisson distribution when fitting the log-linear model might be wrong. Since, the number of total observations is fixed, the true distribution is multinomial.
+
+* The continuous variables BMI and socio- economic status (SES) were manually split into two groups (normal/ overweight and obese, and low SES and normal SES). This could result a loss of information, or less accurate interpretation of the data.
+
+* Some of the assumptions in model selection using linear regression were not met so log and square root transformations were applied in some cases to the data. This could affect the interpretation of the data.
+
+* Stepwise tests were used for model selection where the test statistics may not follow the F or chi- squared distributions (Flom, P.L, Cassell, D.L, 2007)
+
+* An automated stepwise AIC was used in model selection. Although it was used in conjunction with deviance tests and the F test, there is some criticism that the AIC only selects a locally optimal model (Thayer, J.D, 1990).
+
+* The three macro- nutrients being looked at are comprised of specific subcategories, for example fat is made up of different types of fats including trans- fats (which are bad for you) or polysaturated fats (which are good for you) and these have not been investigated here, but the breakdown into subcategories may lead to further explanation of results.
+
+* We only provided point estimation of the fitted proportions in logistic regression  rather than a confidence interval. 
+
+
+
+---
+nocite: |
+  @item1, @item2, @item3, @item4, @item5, @item6
+...
+
+# References
+
+```{r generateBibliography, message=FALSE, warning=FALSE, include=FALSE}
+library("knitcitations")
+require("knitcitations")
+cleanbib()
+options("citation_format" = "pandoc")
+read.bibtex(file = "bibliography.bib")
+```
