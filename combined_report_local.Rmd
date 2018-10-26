@@ -2,12 +2,14 @@
 title: "Nutrition Project Report"
 author: "Dong Luo"
 date: "22 October 2018"
+bibliography: bibliography.bib
 output:
   pdf_document: 
     number_sections: yes
     toc: yes
   html_document:
     df_print: paged
+
 ---
 # Executive summary
 Obesity affects approximately one third of the Australian populated aged 18 years and over (Australian Bureau of Statistics, 2015), posing major health risks to individuals. Obesity has been demonstrated to be related equally to genetics and environmental factors including diet. A person who is dieting has been defined as one who consumes macronutrient groups in an amount lying outside of the acceptable macronutrient distribution ranges (National Health and Medical Research Council, 2017). Here we are interested in whether consuming a diet outside of normal macro-nutrient ranges may be related to Body Mass Index BMI, and thus obesity, and whether a person's demographics, for example sex, age, waist size, and socioeconomic status is predictive of a person's choice of diet.
