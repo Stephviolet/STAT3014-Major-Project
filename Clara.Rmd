@@ -25,6 +25,7 @@ Xy =na.omit(cbind(adultData[,c("BDYMSQ04","BMR","SEX","EIBMR1","ADTOTSE","CHOPER
 X<-Xy[,-ncol(Xy)]
 y<-Xy[,ncol(Xy)]
 X$BDYMSQ04=as.numeric(ifelse(X$BDYMSQ04 == 5, '0', '1'))
+X$SEX=as.numeric(ifelse(X$SEX == 1, '1', '0'))
 ```
 To predict the obesity (level of BMI is greater than 30), we chose eight variables as the predictors, which include BMR, energy intake, total minutes spent sitting or lying down, sex, whether currently on a diet, percentage of energy from carbohydrate, percentage of energy from total fat and percentage of energy from protein. 
 We applied linear discriminant analysis, classification and regression tree and logistic regression to investigate our question and estimated using 10-fold cross-validation.
@@ -344,7 +345,7 @@ res.glm.cv = cv.glm(X1,y,V,seed=1)
 The fitted model is
 $$
 \begin{split}
-\mbox{logit}(p) = &-17.770903  + 0.001879 x_1 - 0.711322 x_2 - 0.00006 x_3 + 3.422641 x4  \\
+\mbox{logit}(p) = &-17.770903  + 0.001879 x_1 - 0.711322 x_2 - 0.00006 x_3 - 3.422641 x4  \\
 & + 0.380154 x_5 - 0.010135 x_6 + 0.001507 x_7 - 0.000998 x_8 
 \end{split}
 $$
